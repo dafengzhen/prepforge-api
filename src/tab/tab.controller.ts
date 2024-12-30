@@ -10,12 +10,6 @@ import {
   Put,
   UseInterceptors,
 } from '@nestjs/common';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { User } from '../user/entities/user.entity';
-import { UpdateCustomizationSettingsTabDto } from './dto/update-customization-settings-tab.dto';
-import { TabService } from './tab.service';
-import { CreateTabDto } from './dto/create-tab.dto';
-import { UpdateTabDto } from './dto/update-tab.dto';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -24,84 +18,83 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Tab } from './entities/tab.entity';
+
+import { CurrentUser } from '../auth/current-user.decorator';
 import { Tag } from '../tag/entities/tag.entity';
+import { User } from '../user/entities/user.entity';
+import { CreateTabDto } from './dto/create-tab.dto';
+import { UpdateCustomizationSettingsTabDto } from './dto/update-customization-settings-tab.dto';
+import { UpdateTabDto } from './dto/update-tab.dto';
+import { Tab } from './entities/tab.entity';
+import { TabService } from './tab.service';
 
 /**
  * TabController.
  *
  * @author dafengzhen
  */
-@ApiTags('tabs')
 @ApiBearerAuth()
+@ApiTags('tabs')
 @Controller('tabs')
 export class TabController {
   constructor(private readonly tabService: TabService) {}
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Post()
   async create(@CurrentUser() user: User, @Body() createTabDto: CreateTabDto) {
     return this.tabService.create(user, createTabDto);
   }
 
+  @ApiForbiddenResponse()
   @ApiOkResponse({ type: [Tab] })
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
   @Get()
   @UseInterceptors(ClassSerializerInterceptor)
   findAll(@CurrentUser() user: User) {
     return this.tabService.findAll(user);
   }
 
+  @ApiForbiddenResponse()
   @ApiOkResponse({ type: Tab })
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
   @Get(':id')
   @UseInterceptors(ClassSerializerInterceptor)
   findOne(@Param('id') id: number, @CurrentUser() user: User) {
     return this.tabService.findOne(+id, user);
   }
 
+  @ApiForbiddenResponse()
   @ApiOkResponse({ type: [Tag] })
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
   @Get(':id/tags')
   @UseInterceptors(ClassSerializerInterceptor)
   findTagsById(@Param('id') id: number, @CurrentUser() user: User) {
     return this.tabService.findTagsById(+id, user);
   }
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  update(
-    @Param('id') id: number,
-    @CurrentUser() user: User,
-    @Body() updateTabDto: UpdateTabDto,
-  ) {
+  @Put(':id')
+  update(@Param('id') id: number, @CurrentUser() user: User, @Body() updateTabDto: UpdateTabDto) {
     return this.tabService.update(+id, user, updateTabDto);
   }
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Put(':id/customization-settings')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Put(':id/customization-settings')
   updateCustomizationSettings(
     @Param('id') id: number,
     @CurrentUser() user: User,
     @Body()
     updateCustomizationSettingsTabDto: UpdateCustomizationSettingsTabDto,
   ) {
-    return this.tabService.updateCustomizationSettings(
-      id,
-      user,
-      updateCustomizationSettingsTabDto,
-    );
+    return this.tabService.updateCustomizationSettings(id, user, updateCustomizationSettingsTabDto);
   }
 }

@@ -11,15 +11,6 @@ import {
   Response,
   UseInterceptors,
 } from '@nestjs/common';
-import { UserService } from './user.service';
-import { LoginDto } from './dto/login.dto';
-import { Public } from '../auth/public-auth.guard';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { User } from './entities/user.entity';
-import { UpdateCustomizationSettingsUserDto } from './dto/update-customization-settings-user.dto';
-import { Response as Res } from 'express';
-import { getMaxAge, isHttpsSite } from '../common/tool/tool';
-import { SECURE_TK, TK } from '../constants';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -28,6 +19,16 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Response as Res } from 'express';
+
+import { CurrentUser } from '../auth/current-user.decorator';
+import { Public } from '../auth/public-auth.guard';
+import { getMaxAge, isHttpsSite } from '../common/tool/tool';
+import { SECURE_TK, TK } from '../constants';
+import { LoginDto } from './dto/login.dto';
+import { UpdateCustomizationSettingsUserDto } from './dto/update-customization-settings-user.dto';
+import { User } from './entities/user.entity';
+import { UserService } from './user.service';
 import { TokenVo } from './vo/token.vo';
 
 /**
@@ -40,9 +41,17 @@ import { TokenVo } from './vo/token.vo';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @ApiOkResponse({ type: TokenVo })
+  @ApiOkResponse({ type: User })
+  @Get('profile')
   @Public()
+  @UseInterceptors(ClassSerializerInterceptor)
+  getProfile(@CurrentUser() user?: User): Promise<undefined | User> {
+    return this.userService.getProfile(user);
+  }
+
+  @ApiOkResponse({ type: TokenVo })
   @Post('login')
+  @Public()
   async login(
     @Response() response: Res,
     @Body() loginDto: LoginDto,
@@ -53,40 +62,28 @@ export class UserController {
     const _isHttpsSite = isHttpsSite();
     response
       .cookie(_isHttpsSite ? SECURE_TK : TK, vo.token, {
-        path: '/',
         httpOnly: true,
+        maxAge: getMaxAge(vo.expDays),
+        path: '/',
         sameSite: 'strict',
         secure: _isHttpsSite,
-        maxAge: getMaxAge(vo.expDays),
       })
       .header('Location', `/users/${vo.id}`)
       .send(vo);
   }
 
-  @ApiOkResponse({ type: User })
-  @Public()
-  @Get('profile')
-  @UseInterceptors(ClassSerializerInterceptor)
-  getProfile(@CurrentUser() user?: User): Promise<User | undefined> {
-    return this.userService.getProfile(user);
-  }
-
   @ApiBearerAuth()
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Put(':id/customization-settings')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Put(':id/customization-settings')
   updateCustomizationSettings(
     @Param('id') id: number,
     @CurrentUser() user: User,
     @Body()
     updateCustomizationSettingsUserDto: UpdateCustomizationSettingsUserDto,
   ): Promise<void> {
-    return this.userService.updateCustomizationSettings(
-      id,
-      user,
-      updateCustomizationSettingsUserDto,
-    );
+    return this.userService.updateCustomizationSettings(id, user, updateCustomizationSettingsUserDto);
   }
 }

@@ -24,9 +24,7 @@ export const getMaxAge = (days: number) => {
  */
 export const checkUserPermission = (id: number, currentUserId: number) => {
   if (id !== currentUserId) {
-    throw new ForbiddenException(
-      'Sorry, you do not have permission to access this resource.',
-    );
+    throw new ForbiddenException('Sorry, you do not have permission to access this resource.');
   }
 };
 
@@ -36,16 +34,8 @@ export const checkUserPermission = (id: number, currentUserId: number) => {
  * @param oldPassword oldPassword
  * @param newPassword newPassword
  */
-export const isPasswordSimilar = (
-  oldPassword: string | null | undefined,
-  newPassword: string | null | undefined,
-) => {
-  if (
-    typeof oldPassword !== 'string' ||
-    typeof newPassword !== 'string' ||
-    oldPassword === '' ||
-    newPassword === ''
-  ) {
+export const isPasswordSimilar = (oldPassword: null | string | undefined, newPassword: null | string | undefined) => {
+  if (typeof oldPassword !== 'string' || typeof newPassword !== 'string' || oldPassword === '' || newPassword === '') {
     return;
   }
 

@@ -4,10 +4,10 @@
  * @author dafengzhen
  */
 export interface IPagination<T> {
-  size: number;
+  data: T[];
+  next: boolean;
   page: number;
   pages: number;
-  next: boolean;
   previous: boolean;
-  data: T[];
+  size: number;
 }

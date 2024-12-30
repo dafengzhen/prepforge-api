@@ -1,15 +1,14 @@
-import { IBaseUpdateCustomizationSettings } from '../../interfaces/base-update-customization-settings';
 import { ApiHideProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+import { IBaseUpdateCustomizationSettings } from '../../interfaces/base-update-customization-settings';
 
 /**
  * UpdateCustomizationSettingsQuestionDto.
  *
  * @author dafengzhen
  */
-export class UpdateCustomizationSettingsQuestionDto
-  implements IBaseUpdateCustomizationSettings
-{
+export class UpdateCustomizationSettingsQuestionDto implements IBaseUpdateCustomizationSettings {
   @ApiHideProperty()
-  @ApiPropertyOptional({ type: String, default: 'question' })
+  @ApiPropertyOptional({ default: 'question', type: String })
   type = 'question' as const;
 }

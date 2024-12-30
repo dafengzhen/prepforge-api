@@ -1,6 +1,6 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * QuestionDetails.
@@ -9,20 +9,20 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
  */
 class QuestionDetailDto {
   /**
-   * question.
-   */
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  question?: string;
-
-  /**
    * answer.
    */
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   answer?: string;
+
+  /**
+   * question.
+   */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  question?: string;
 }
 
 /**
@@ -32,14 +32,6 @@ class QuestionDetailDto {
  */
 export class CreateQuestionDto {
   /**
-   * question.
-   */
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  question?: string;
-
-  /**
    * answer.
    */
   @ApiPropertyOptional()
@@ -48,13 +40,21 @@ export class CreateQuestionDto {
   answer?: string;
 
   /**
+   * question.
+   */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  question?: string;
+
+  /**
    * questions.
    */
   @ApiPropertyOptional({
     type: [QuestionDetailDto],
   })
-  @IsOptional()
   @IsArray()
+  @IsOptional()
   @Type(() => QuestionDetailDto)
   questions?: QuestionDetailDto[];
 
@@ -62,15 +62,15 @@ export class CreateQuestionDto {
    * tabId.
    */
   @ApiPropertyOptional()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   tabId?: number;
 
   /**
    * tagId.
    */
   @ApiPropertyOptional()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   tagId?: number;
 }

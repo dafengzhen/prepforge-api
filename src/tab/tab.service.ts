@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Tab } from './entities/tab.entity';
-import { User } from '../user/entities/user.entity';
-import { checkUserPermission } from '../common/tool/tool';
 import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
-import { UpdateCustomizationSettingsTabDto } from './dto/update-customization-settings-tab.dto';
-import { CustomizationSettings } from './entities/customization-settings';
+import { Repository } from 'typeorm';
+
+import { checkUserPermission } from '../common/tool/tool';
+import { User } from '../user/entities/user.entity';
 import { CreateTabDto } from './dto/create-tab.dto';
+import { UpdateCustomizationSettingsTabDto } from './dto/update-customization-settings-tab.dto';
 import { UpdateTabDto } from './dto/update-tab.dto';
+import { CustomizationSettings } from './entities/customization-settings';
+import { Tab } from './entities/tab.entity';
 
 /**
  * TabService.
@@ -24,10 +25,7 @@ export class TabService {
 
   async create(currentUser: User, createTabDto: CreateTabDto) {
     const { name, names = [] } = createTabDto;
-    const allNames = [
-      ...names,
-      ...(typeof name === 'string' ? [name] : []),
-    ].filter((item) => item !== '');
+    const allNames = [...names, ...(typeof name === 'string' ? [name] : [])].filter((item) => item !== '');
 
     if (allNames.length === 0) {
       return;
@@ -65,13 +63,13 @@ export class TabService {
 
   async findTagsById(id: number, currentUser: User) {
     return this.tabRepository.findOneOrFail({
+      relations: ['tags'],
       where: {
         id,
         user: {
           id: currentUser.id,
         },
       },
-      relations: ['tags'],
     });
   }
 

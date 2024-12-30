@@ -1,10 +1,11 @@
-import { Base } from '../../common/entities/base.entity';
-import { Column, Entity, Index, ManyToOne } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
-import { Tag } from '../../tag/entities/tag.entity';
-import { Tab } from '../../tab/entities/tab.entity';
-import { CustomizationSettings } from './customization-settings';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Column, Entity, Index, ManyToOne } from 'typeorm';
+
+import { Base } from '../../common/entities/base.entity';
+import { Tab } from '../../tab/entities/tab.entity';
+import { Tag } from '../../tag/entities/tag.entity';
+import { User } from '../../user/entities/user.entity';
+import { CustomizationSettings } from './customization-settings';
 
 /**
  * Question.
@@ -14,20 +15,30 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 @Entity()
 export class Question extends Base {
   /**
-   * question.
-   */
-  @ApiProperty()
-  @Index({ fulltext: true, parser: 'ngram' })
-  @Column({ type: 'text' })
-  question: string;
-
-  /**
    * answer.
    */
   @ApiProperty()
-  @Index({ fulltext: true, parser: 'ngram' })
   @Column({ type: 'text' })
+  @Index({ fulltext: true, parser: 'ngram' })
   answer: string;
+
+  /**
+   * customizationSettings.
+   */
+  @ApiPropertyOptional({
+    default: { type: 'question' },
+    type: () => CustomizationSettings,
+  })
+  @Column({ type: 'json' })
+  customizationSettings: CustomizationSettings = new CustomizationSettings();
+
+  /**
+   * question.
+   */
+  @ApiProperty()
+  @Column({ type: 'text' })
+  @Index({ fulltext: true, parser: 'ngram' })
+  question: string;
 
   /**
    * sort.
@@ -56,14 +67,4 @@ export class Question extends Base {
   @ApiPropertyOptional({ type: () => User })
   @ManyToOne(() => User, (user) => user.questions, { onDelete: 'CASCADE' })
   user: User;
-
-  /**
-   * customizationSettings.
-   */
-  @ApiPropertyOptional({
-    type: () => CustomizationSettings,
-    default: { type: 'question' },
-  })
-  @Column({ type: 'json' })
-  customizationSettings: CustomizationSettings = new CustomizationSettings();
 }

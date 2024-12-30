@@ -1,5 +1,5 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * UpdateQuestionDto.
@@ -7,14 +7,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
  * @author dafengzhen
  */
 export class UpdateQuestionDto {
-  /**
-   * question.
-   */
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  question?: string;
-
   /**
    * answer.
    */
@@ -24,10 +16,18 @@ export class UpdateQuestionDto {
   answer?: string;
 
   /**
-   * sort.
+   * question.
    */
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  question?: string;
+
+  /**
+   * sort.
+   */
+  @ApiPropertyOptional()
   @IsNumber()
+  @IsOptional()
   sort?: number;
 }

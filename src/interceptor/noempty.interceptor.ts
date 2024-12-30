@@ -1,5 +1,7 @@
-import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
-import { map, Observable } from 'rxjs';
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import type { Observable } from 'rxjs';
+
+import { map } from 'rxjs';
 
 /**
  * NoEmptyInterceptor.
@@ -8,23 +10,16 @@ import { map, Observable } from 'rxjs';
  */
 export class NoEmptyInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next
-      .handle()
-      .pipe(map((data) => this.removeNullAndUndefinedValues(data)));
+    return next.handle().pipe(map((data) => this.removeNullAndUndefinedValues(data)));
   }
 
-  private removeNullAndUndefinedValues(data: Record<string, any> | any[]): any {
+  private removeNullAndUndefinedValues(data: any[] | Record<string, any>): any {
     if (Array.isArray(data)) {
-      return data
-        .map((item) => this.removeNullAndUndefinedValues(item))
-        .filter(isNotNullOrUndefined);
+      return data.map((item) => this.removeNullAndUndefinedValues(item)).filter(isNotNullOrUndefined);
     } else if (data && typeof data === 'object' && !(data instanceof Date)) {
       return Object.fromEntries(
         Object.entries(data)
-          .map(([key, value]) => [
-            key,
-            this.removeNullAndUndefinedValues(value),
-          ])
+          .map(([key, value]) => [key, this.removeNullAndUndefinedValues(value)])
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           .filter(([_, value]) => isNotNullOrUndefined(value)),
       );

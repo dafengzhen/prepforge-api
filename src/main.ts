@@ -1,17 +1,14 @@
-// noinspection JSIgnoredPromiseFromCall
+import type { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { XPoweredByInterceptor } from './interceptor/xpoweredby.interceptor';
-import { NoEmptyInterceptor } from './interceptor/noempty.interceptor';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import * as cookieParser from 'cookie-parser';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
+import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as cookieParser from 'cookie-parser';
+
+import { AppModule } from './app.module';
+import { NoEmptyInterceptor } from './interceptor/noempty.interceptor';
+import { XPoweredByInterceptor } from './interceptor/xpoweredby.interceptor';
 
 /**
  * bootstrap.
@@ -23,36 +20,34 @@ async function bootstrap() {
   const corsOrigin = process.env.CORS_ORIGIN;
   if (typeof corsOrigin === 'string' && corsOrigin !== '') {
     cors = {
-      origin: corsOrigin.split(','),
       credentials: true,
+      origin: corsOrigin.split(','),
     };
   } else {
     cors = true;
   }
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
     cors,
+    rawBody: true,
   });
   app.useGlobalInterceptors(
     new NoEmptyInterceptor(),
-    process.env.POWERED_BY_HEADER === 'true'
-      ? new XPoweredByInterceptor('prepforge')
-      : null,
+    process.env.POWERED_BY_HEADER === 'true' ? new XPoweredByInterceptor('prepforge') : null,
   );
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      transform: true,
       forbidNonWhitelisted: true,
+      stopAtFirstError: true,
+      transform: true,
       transformOptions: {
         enableImplicitConversion: true,
       },
-      stopAtFirstError: true,
+      whitelist: true,
     }),
   );
   app.useBodyParser('json', { limit: '16mb' });
-  app.useBodyParser('urlencoded', { limit: '16mb', extended: true });
+  app.useBodyParser('urlencoded', { extended: true, limit: '16mb' });
   app.use(cookieParser());
 
   const config = new DocumentBuilder()

@@ -7,5 +7,5 @@ export interface IBaseUpdateCustomizationSettings {
   /**
    * type.
    */
-  type: 'user' | 'tab' | 'tag' | 'question';
+  type: 'question' | 'tab' | 'tag' | 'user';
 }

@@ -1,6 +1,6 @@
-import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * CreateTagDto.
@@ -20,16 +20,16 @@ export class CreateTagDto {
    * names.
    */
   @ApiPropertyOptional()
+  @IsArray()
   @IsOptional()
   @Type(() => String)
-  @IsArray()
   names?: string[];
 
   /**
    * tabId.
    */
   @ApiPropertyOptional()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   tabId?: number;
 }

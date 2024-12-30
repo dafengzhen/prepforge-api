@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TabService } from './tab.service';
-import { TabController } from './tab.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AuthModule } from '../auth/auth.module';
 import { Tab } from './entities/tab.entity';
+import { TabController } from './tab.controller';
+import { TabService } from './tab.service';
 
 /**
  * TabModule.
@@ -11,8 +12,8 @@ import { Tab } from './entities/tab.entity';
  * @author dafengzhen
  */
 @Module({
-  imports: [AuthModule, TypeOrmModule.forFeature([Tab])],
   controllers: [TabController],
+  imports: [AuthModule, TypeOrmModule.forFeature([Tab])],
   providers: [TabService],
 })
 export class TabModule {}

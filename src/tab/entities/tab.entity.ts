@@ -1,10 +1,11 @@
-import { Base } from '../../common/entities/base.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
+
+import { Base } from '../../common/entities/base.entity';
 import { Question } from '../../question/entities/question.entity';
 import { Tag } from '../../tag/entities/tag.entity';
+import { User } from '../../user/entities/user.entity';
 import { CustomizationSettings } from './customization-settings';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * Tab.
@@ -14,32 +15,18 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 @Entity()
 export class Tab extends Base {
   /**
+   * customizationSettings.
+   */
+  @ApiProperty({ default: { type: 'tab' }, type: () => CustomizationSettings })
+  @Column({ type: 'json' })
+  customizationSettings: CustomizationSettings = new CustomizationSettings();
+
+  /**
    * name.
    */
   @ApiProperty()
   @Column()
   name: string;
-
-  /**
-   * sort.
-   */
-  @ApiProperty()
-  @Column({ default: 0 })
-  sort: number;
-
-  /**
-   * user.
-   */
-  @ApiPropertyOptional({ type: () => User })
-  @ManyToOne(() => User, (user) => user.tabs, { onDelete: 'CASCADE' })
-  user: User;
-
-  /**
-   * tags.
-   */
-  @ApiPropertyOptional({ type: () => Tag })
-  @OneToMany(() => Tag, (tag) => tag.tab)
-  tags: Tag[];
 
   /**
    * questions.
@@ -49,9 +36,23 @@ export class Tab extends Base {
   questions: Question[];
 
   /**
-   * customizationSettings.
+   * sort.
    */
-  @ApiProperty({ type: () => CustomizationSettings, default: { type: 'tab' } })
-  @Column({ type: 'json' })
-  customizationSettings: CustomizationSettings = new CustomizationSettings();
+  @ApiProperty()
+  @Column({ default: 0 })
+  sort: number;
+
+  /**
+   * tags.
+   */
+  @ApiPropertyOptional({ type: () => Tag })
+  @OneToMany(() => Tag, (tag) => tag.tab)
+  tags: Tag[];
+
+  /**
+   * user.
+   */
+  @ApiPropertyOptional({ type: () => User })
+  @ManyToOne(() => User, (user) => user.tabs, { onDelete: 'CASCADE' })
+  user: User;
 }

@@ -11,13 +11,6 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { User } from '../user/entities/user.entity';
-import { QuestionService } from './question.service';
-import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -26,77 +19,74 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+
+import { CurrentUser } from '../auth/current-user.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { User } from '../user/entities/user.entity';
+import { CreateQuestionDto } from './dto/create-question.dto';
+import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
+import { UpdateQuestionDto } from './dto/update-question.dto';
 import { Question } from './entities/question.entity';
+import { QuestionService } from './question.service';
 
 /**
  * QuestionController.
  *
  * @author dafengzhen
  */
-@ApiTags('questions')
 @ApiBearerAuth()
+@ApiTags('questions')
 @Controller('questions')
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Post()
   @HttpCode(HttpStatus.NO_CONTENT)
-  async create(
-    @CurrentUser() user: User,
-    @Body() createQuestionDto: CreateQuestionDto,
-  ) {
+  @Post()
+  async create(@CurrentUser() user: User, @Body() createQuestionDto: CreateQuestionDto) {
     return this.questionService.create(user, createQuestionDto);
   }
 
+  @ApiForbiddenResponse()
   @ApiOkResponse({ type: [Question] })
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
   @Get()
   @UseInterceptors(ClassSerializerInterceptor)
   findAll(@CurrentUser() user: User, @Query() query?: PaginationQueryDto) {
     return this.questionService.findAll(user, query);
   }
 
+  @ApiForbiddenResponse()
   @ApiOkResponse({ type: Question })
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
   @Get(':id')
   @UseInterceptors(ClassSerializerInterceptor)
   findOne(@Param('id') id: number, @CurrentUser() user: User) {
     return this.questionService.findOne(+id, user);
   }
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Put(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  update(
-    @Param('id') id: number,
-    @CurrentUser() user: User,
-    @Body() updateQuestionDto: UpdateQuestionDto,
-  ) {
+  @Put(':id')
+  update(@Param('id') id: number, @CurrentUser() user: User, @Body() updateQuestionDto: UpdateQuestionDto) {
     return this.questionService.update(+id, user, updateQuestionDto);
   }
 
+  @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
-  @ApiForbiddenResponse()
-  @Put(':id/customization-settings')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Put(':id/customization-settings')
   updateCustomizationSettings(
     @Param('id') id: number,
     @CurrentUser() user: User,
     @Body()
     updateCustomizationSettingsQuestionDto: UpdateCustomizationSettingsQuestionDto,
   ) {
-    return this.questionService.updateCustomizationSettings(
-      id,
-      user,
-      updateCustomizationSettingsQuestionDto,
-    );
+    return this.questionService.updateCustomizationSettings(id, user, updateCustomizationSettingsQuestionDto);
   }
 }

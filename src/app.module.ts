@@ -1,24 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { ConfigModule } from '@nestjs/config';
 import databaseConfig from './config/database.config';
 import databaseConfigProd from './config/database.config.prod';
-import { User } from './user/entities/user.entity';
-import { Tab } from './tab/entities/tab.entity';
-import { Tag } from './tag/entities/tag.entity';
 import { Question } from './question/entities/question.entity';
-import { TabModule } from './tab/tab.module';
-import { TagModule } from './tag/tag.module';
 import { QuestionModule } from './question/question.module';
-import { TabService } from './tab/tab.service';
-import { TagService } from './tag/tag.service';
 import { QuestionService } from './question/question.service';
+import { Tab } from './tab/entities/tab.entity';
+import { TabModule } from './tab/tab.module';
+import { TabService } from './tab/tab.service';
+import { Tag } from './tag/entities/tag.entity';
+import { TagModule } from './tag/tag.module';
+import { TagService } from './tag/tag.service';
+import { User } from './user/entities/user.entity';
+import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
 
 /**
@@ -27,17 +28,15 @@ import { UserService } from './user/user.service';
  * @author dafengzhen
  */
 @Module({
+  controllers: [AppController],
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
       expandVariables: true,
+      isGlobal: true,
       load: [databaseConfig],
     }),
     TypeOrmModule.forRootAsync({
-      useFactory:
-        process.env.NODE_ENV !== 'production'
-          ? databaseConfig
-          : databaseConfigProd,
+      useFactory: process.env.NODE_ENV !== 'production' ? databaseConfig : databaseConfigProd,
     }),
     TypeOrmModule.forFeature([User, Tab, Tag, Question]),
     AuthModule,
@@ -46,7 +45,6 @@ import { UserService } from './user/user.service';
     TagModule,
     QuestionModule,
   ],
-  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,

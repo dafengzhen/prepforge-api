@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Repository } from 'typeorm';
-import { User } from '../user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+
+import { User } from '../user/entities/user.entity';
 
 /**
  * salt rounds.
@@ -23,24 +24,12 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  public static async isMatchPassword(
-    currentPassword: string,
-    userPassword: string,
-  ) {
+  public static async isMatchPassword(currentPassword: string, userPassword: string) {
     return bcrypt.compare(currentPassword, userPassword);
   }
 
-  async validate(username: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { username } });
-
-    if (
-      !user ||
-      !(await AuthService.isMatchPassword(password, user.password))
-    ) {
-      throw new UnauthorizedException('Invalid username or password');
-    }
-
-    return user;
+  async encryptPassword(password: string) {
+    return bcrypt.hash(password, SALT_ROUNDS);
   }
 
   async getTokenForUser(user: User) {
@@ -58,7 +47,13 @@ export class AuthService {
     return user;
   }
 
-  async encryptPassword(password: string) {
-    return bcrypt.hash(password, SALT_ROUNDS);
+  async validate(username: string, password: string) {
+    const user = await this.userRepository.findOne({ where: { username } });
+
+    if (!user || !(await AuthService.isMatchPassword(password, user.password))) {
+      throw new UnauthorizedException('Invalid username or password');
+    }
+
+    return user;
   }
 }

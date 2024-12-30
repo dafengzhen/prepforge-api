@@ -1,6 +1,7 @@
-import { SelectQueryBuilder } from 'typeorm';
-import { PaginationQueryDto } from '../dto/pagination-query.dto';
-import { IPagination } from '../interface/pagination';
+import type { SelectQueryBuilder } from 'typeorm';
+
+import type { PaginationQueryDto } from '../dto/pagination-query.dto';
+import type { IPagination } from '../interface/pagination';
 
 /**
  * Paginate.
@@ -11,11 +12,11 @@ export async function Paginate<T>(
   qb: SelectQueryBuilder<T>,
   paginationQuery?: PaginationQueryDto,
 ): Promise<IPagination<T>> {
-  const { page, size, limit, offset } = paginationQuery ?? {
-    page: 1,
-    size: 15,
+  const { limit, offset, page, size } = paginationQuery ?? {
     limit: 15,
     offset: 1,
+    page: 1,
+    size: 15,
   };
 
   const _page = page ?? 1;
@@ -26,11 +27,11 @@ export async function Paginate<T>(
   const pages = Math.ceil((await qb.getCount()) / _limit);
 
   return {
-    size: _limit,
+    data,
+    next: _page + 1 < pages,
     page: _page,
     pages,
-    next: _page + 1 < pages,
     previous: _page - 1 > 1,
-    data,
+    size: _limit,
   };
 }

@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Tag } from './entities/tag.entity';
-import { User } from '../user/entities/user.entity';
-import { checkUserPermission } from '../common/tool/tool';
-import { UpdateCustomizationSettingsTagDto } from './dto/update-customization-settings-tag.dto';
 import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
-import { CustomizationSettings } from './entities/customization-settings';
-import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateTagDto } from './dto/update-tag.dto';
+import { Repository } from 'typeorm';
+
+import { checkUserPermission } from '../common/tool/tool';
 import { Tab } from '../tab/entities/tab.entity';
+import { User } from '../user/entities/user.entity';
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateCustomizationSettingsTagDto } from './dto/update-customization-settings-tag.dto';
+import { UpdateTagDto } from './dto/update-tag.dto';
+import { CustomizationSettings } from './entities/customization-settings';
+import { Tag } from './entities/tag.entity';
 
 /**
  * TagService.
@@ -21,17 +22,13 @@ export class TagService {
   constructor(
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
-
     @InjectRepository(Tab)
     private readonly tabRepository: Repository<Tab>,
   ) {}
 
   async create(currentUser: User, createTagDto: CreateTagDto) {
     const { name, names = [], tabId } = createTagDto;
-    const allNames = [
-      ...names,
-      ...(typeof name === 'string' ? [name] : []),
-    ].filter((item) => item !== '');
+    const allNames = [...names, ...(typeof name === 'string' ? [name] : [])].filter((item) => item !== '');
 
     if (allNames.length === 0) {
       return;
@@ -68,25 +65,25 @@ export class TagService {
 
   async findOne(id: number, currentUser: User) {
     return this.tagRepository.findOneOrFail({
+      relations: ['tab'],
       where: {
         id,
         user: {
           id: currentUser.id,
         },
       },
-      relations: ['tab'],
     });
   }
 
   async findQuestionsById(id: number, currentUser: User) {
     return this.tagRepository.findOneOrFail({
+      relations: ['questions'],
       where: {
         id,
         user: {
           id: currentUser.id,
         },
       },
-      relations: ['questions'],
     });
   }
 

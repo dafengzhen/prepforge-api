@@ -1,20 +1,21 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Question } from './entities/question.entity';
-import { User } from '../user/entities/user.entity';
-import { checkUserPermission } from '../common/tool/tool';
-import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
+import * as sanitizeHtml from 'sanitize-html';
 import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
-import { CustomizationSettings } from './entities/customization-settings';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
+import { Repository } from 'typeorm';
+
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { IPagination } from '../common/interface/pagination';
 import { Paginate } from '../common/tool/pagination';
+import { checkUserPermission } from '../common/tool/tool';
 import { Tab } from '../tab/entities/tab.entity';
 import { Tag } from '../tag/entities/tag.entity';
-import * as sanitizeHtml from 'sanitize-html';
+import { User } from '../user/entities/user.entity';
+import { CreateQuestionDto } from './dto/create-question.dto';
+import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
+import { UpdateQuestionDto } from './dto/update-question.dto';
+import { CustomizationSettings } from './entities/customization-settings';
+import { Question } from './entities/question.entity';
 
 /**
  * QuestionService.
@@ -26,45 +27,33 @@ export class QuestionService {
   constructor(
     @InjectRepository(Question)
     private readonly questionRepository: Repository<Question>,
-
     @InjectRepository(Tab)
     private readonly tabRepository: Repository<Tab>,
-
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
   ) {}
 
   async create(currentUser: User, createQuestionDto: CreateQuestionDto) {
-    const {
-      question: _question,
-      answer,
-      questions: _questions = [],
-      tabId,
-      tagId,
-    } = createQuestionDto;
+    const { answer, question: _question, questions: _questions = [], tabId, tagId } = createQuestionDto;
     const allQuestions = [
       ..._questions,
-      ...(typeof _question === 'string' && typeof answer === 'string'
-        ? [{ question: _question, answer }]
-        : []),
+      ...(typeof _question === 'string' && typeof answer === 'string' ? [{ answer, question: _question }] : []),
     ]
       .filter((item) => item.question !== '' && item.answer !== '')
       .map((item) => {
         const q = sanitizeHtml(item.question, {
-          allowedTags: false,
           allowedAttributes: false,
-          allowVulnerableTags: true,
+          nonBooleanAttributes: [],
         });
 
         const a = sanitizeHtml(item.answer, {
-          allowedTags: false,
           allowedAttributes: false,
-          allowVulnerableTags: true,
+          nonBooleanAttributes: [],
         });
 
         return {
-          question: q,
           answer: a,
+          question: q,
         };
       });
 
@@ -108,7 +97,7 @@ export class QuestionService {
       .addOrderBy('question.sort', 'DESC')
       .addOrderBy('question.id', 'DESC');
 
-    let questions: Question[] | IPagination<Question>;
+    let questions: IPagination<Question> | Question[];
 
     if (
       !query ||
@@ -136,28 +125,20 @@ export class QuestionService {
     });
   }
 
-  async update(
-    id: number,
-    currentUser: User,
-    updateQuestionDto: UpdateQuestionDto,
-  ) {
+  async update(id: number, currentUser: User, updateQuestionDto: UpdateQuestionDto) {
     const question = await this.questionRepository.findOneOrFail({
+      relations: ['tab', 'tag'],
       where: {
         id,
         user: {
           id: currentUser.id,
         },
       },
-      relations: ['tab', 'tag'],
     });
 
-    const { question: _question, answer, sort } = updateQuestionDto;
+    const { answer, question: _question, sort } = updateQuestionDto;
 
-    if (
-      _question === question.question &&
-      answer === question.answer &&
-      sort === question.sort
-    ) {
+    if (_question === question.question && answer === question.answer && sort === question.sort) {
       return;
     }
 

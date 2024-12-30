@@ -7,16 +7,16 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class TokenVo {
   /**
+   * expDays
+   */
+  @ApiProperty({ default: 31 })
+  expDays: number;
+
+  /**
    * id.
    */
   @ApiProperty()
   id: number;
-
-  /**
-   * username.
-   */
-  @ApiProperty()
-  username: string;
 
   /**
    * token.
@@ -25,10 +25,10 @@ export class TokenVo {
   token: string;
 
   /**
-   * expDays
+   * username.
    */
-  @ApiProperty({ default: 31 })
-  expDays: number;
+  @ApiProperty()
+  username: string;
 
   constructor(vo: TokenVo) {
     Object.assign(this, vo);

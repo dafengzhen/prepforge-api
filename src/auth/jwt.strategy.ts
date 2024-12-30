@@ -1,11 +1,12 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { isHttpsSite } from '../common/tool/tool';
-import { AUTHORIZATION, BEARER, SECURE_TK, TK } from '../constants';
+import { PassportStrategy } from '@nestjs/passport';
 import { Request as Req } from 'express';
 import { JwtPayload } from 'jsonwebtoken';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+
+import { isHttpsSite } from '../common/tool/tool';
+import { AUTHORIZATION, BEARER, SECURE_TK, TK } from '../constants';
+import { AuthService } from './auth.service';
 
 /**
  * JwtStrategy.
@@ -16,35 +17,27 @@ import { JwtPayload } from 'jsonwebtoken';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly authService: AuthService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        JwtStrategy.extractJWT,
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]),
       ignoreExpiration: false,
+      jwtFromRequest: ExtractJwt.fromExtractors([JwtStrategy.extractJWT, ExtractJwt.fromAuthHeaderAsBearerToken()]),
       secretOrKey: process.env.TOKEN_SECRET,
     });
   }
 
-  static extractJWT(req: Req): string | null | undefined {
+  static extractAuthHeaderAsBearerToken(req: Req): null | string | undefined {
+    const header = req.headers[AUTHORIZATION] ?? req.headers[AUTHORIZATION.toLowerCase()];
+    const bearer = `${BEARER} `;
+    if (typeof header === 'string' && header.startsWith(bearer) && header.length > bearer.length * 2) {
+      return header;
+    }
+  }
+
+  static extractJWT(req: Req): null | string | undefined {
     const key = isHttpsSite() ? SECURE_TK : TK;
     if (typeof req.cookies === 'object') {
       const tk = req.cookies[key];
       if (typeof tk === 'string' && tk.length > 0) {
         return tk;
       }
-    }
-  }
-
-  static extractAuthHeaderAsBearerToken(req: Req): string | null | undefined {
-    const header =
-      req.headers[AUTHORIZATION] ?? req.headers[AUTHORIZATION.toLowerCase()];
-    const bearer = `${BEARER} `;
-    if (
-      typeof header === 'string' &&
-      header.startsWith(bearer) &&
-      header.length > bearer.length * 2
-    ) {
-      return header;
     }
   }
 

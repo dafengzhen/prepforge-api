@@ -1,16 +1,6 @@
-import {
-  CreateDateColumn,
-  DeleteDateColumn,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-  VersionColumn,
-} from 'typeorm';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import {
-  ApiHideProperty,
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
+import { CreateDateColumn, DeleteDateColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from 'typeorm';
 
 /**
  * Base,
@@ -19,13 +9,6 @@ import {
  */
 export abstract class Base {
   /**
-   * id.
-   */
-  @ApiProperty()
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  /**
    * createDate.
    */
   @ApiProperty()
@@ -33,19 +16,26 @@ export abstract class Base {
   createDate: string;
 
   /**
+   * deleteDate.
+   */
+  @ApiHideProperty()
+  @DeleteDateColumn()
+  @Exclude()
+  deleteDate: string;
+
+  /**
+   * id.
+   */
+  @ApiProperty()
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  /**
    * updateDate.
    */
   @ApiPropertyOptional()
   @UpdateDateColumn()
   updateDate: string;
-
-  /**
-   * deleteDate.
-   */
-  @ApiHideProperty()
-  @Exclude()
-  @DeleteDateColumn()
-  deleteDate: string;
 
   /**
    * version.

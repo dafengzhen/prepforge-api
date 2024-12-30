@@ -1,5 +1,5 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 /**
  * UpdateTabDto.
@@ -19,7 +19,7 @@ export class UpdateTabDto {
    * sort.
    */
   @ApiPropertyOptional()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
   sort?: number;
 }

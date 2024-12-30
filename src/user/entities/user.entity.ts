@@ -1,16 +1,13 @@
-import { Column, Entity, OneToMany } from 'typeorm';
-import { Base } from '../../common/entities/base.entity';
-import { IsNotEmpty } from 'class-validator';
+import { ApiHideProperty, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import { CustomizationSettings } from './customization-settings';
+import { IsNotEmpty } from 'class-validator';
+import { Column, Entity, OneToMany } from 'typeorm';
+
+import { Base } from '../../common/entities/base.entity';
+import { Question } from '../../question/entities/question.entity';
 import { Tab } from '../../tab/entities/tab.entity';
 import { Tag } from '../../tag/entities/tag.entity';
-import { Question } from '../../question/entities/question.entity';
-import {
-  ApiHideProperty,
-  ApiProperty,
-  ApiPropertyOptional,
-} from '@nestjs/swagger';
+import { CustomizationSettings } from './customization-settings';
 
 /**
  * User.
@@ -20,21 +17,27 @@ import {
 @Entity()
 export class User extends Base {
   /**
-   * username.
+   * customizationSettings.
    */
-  @ApiProperty()
-  @IsNotEmpty()
-  @Column({ unique: true })
-  username: string;
+  @ApiProperty({ default: { type: 'user' }, type: () => CustomizationSettings })
+  @Column({ type: 'json' })
+  customizationSettings: CustomizationSettings = new CustomizationSettings();
 
   /**
    * password.
    */
   @ApiHideProperty()
-  @IsNotEmpty()
-  @Exclude()
   @Column()
+  @Exclude()
+  @IsNotEmpty()
   password: string;
+
+  /**
+   * questions.
+   */
+  @ApiPropertyOptional({ type: () => Question })
+  @OneToMany(() => Question, (question) => question.user)
+  questions: Question[];
 
   /**
    * tags.
@@ -51,16 +54,10 @@ export class User extends Base {
   tags: Tag[];
 
   /**
-   * questions.
+   * username.
    */
-  @ApiPropertyOptional({ type: () => Question })
-  @OneToMany(() => Question, (question) => question.user)
-  questions: Question[];
-
-  /**
-   * customizationSettings.
-   */
-  @ApiProperty({ type: () => CustomizationSettings, default: { type: 'user' } })
-  @Column({ type: 'json' })
-  customizationSettings: CustomizationSettings = new CustomizationSettings();
+  @ApiProperty()
+  @Column({ unique: true })
+  @IsNotEmpty()
+  username: string;
 }

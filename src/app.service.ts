@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Tab } from './tab/entities/tab.entity';
 import { Repository } from 'typeorm';
+
+import { Tab } from './tab/entities/tab.entity';
+import { User } from './user/entities/user.entity';
 
 /**
  * AppService.
@@ -15,14 +16,6 @@ export class AppService {
     @InjectRepository(Tab)
     private readonly tabRepository: Repository<Tab>,
   ) {}
-
-  health(): {
-    status: 'UP';
-  } {
-    return {
-      status: 'UP',
-    };
-  }
 
   async export(currentUser: User) {
     return this.tabRepository
@@ -37,5 +30,13 @@ export class AppService {
       .addOrderBy('tab.sort', 'DESC')
       .addOrderBy('tab.id', 'DESC')
       .getMany();
+  }
+
+  health(): {
+    status: 'UP';
+  } {
+    return {
+      status: 'UP',
+    };
   }
 }

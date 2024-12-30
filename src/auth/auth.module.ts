@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { PassportModule } from '@nestjs/passport';
-import { LocalStrategy } from './local.strategy';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../user/entities/user.entity';
+
 import { EXP_DAYS } from '../constants';
+import { User } from '../user/entities/user.entity';
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
+import { LocalStrategy } from './local.strategy';
 
 /**
  * AuthModule.
@@ -14,6 +15,8 @@ import { EXP_DAYS } from '../constants';
  * @author dafengzhen
  */
 @Module({
+  controllers: [],
+  exports: [AuthService],
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule,
@@ -26,7 +29,5 @@ import { EXP_DAYS } from '../constants';
     }),
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService],
-  controllers: [],
 })
 export class AuthModule {}

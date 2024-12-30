@@ -9,32 +9,32 @@ export class PaginationQueryDto {
   /**
    * limit.
    */
+  @IsNumber()
   @IsOptional()
   @IsPositive()
-  @IsNumber()
   limit?: number;
 
   /**
    * offset.
    */
-  @IsPositive()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
+  @IsPositive()
   offset?: number;
-
-  /**
-   * size.
-   */
-  @IsOptional()
-  @IsPositive()
-  @IsNumber()
-  size?: number;
 
   /**
    * page.
    */
-  @IsPositive()
-  @IsOptional()
   @IsNumber()
+  @IsOptional()
+  @IsPositive()
   page?: number;
+
+  /**
+   * size.
+   */
+  @IsNumber()
+  @IsOptional()
+  @IsPositive()
+  size?: number;
 }

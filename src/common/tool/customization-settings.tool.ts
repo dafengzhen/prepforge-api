@@ -1,36 +1,34 @@
-import { CustomizationSettings as CustomizationSettingsUser } from '../../user/entities/customization-settings';
+import type { UpdateCustomizationSettingsQuestionDto } from '../../question/dto/update-customization-settings-question.dto';
+import type { UpdateCustomizationSettingsTabDto } from '../../tab/dto/update-customization-settings-tab.dto';
+import type { UpdateCustomizationSettingsTagDto } from '../../tag/dto/update-customization-settings-tag.dto';
+import type { UpdateCustomizationSettingsUserDto } from '../../user/dto/update-customization-settings-user.dto';
+
+import { CustomizationSettings as CustomizationSettingsQuestion } from '../../question/entities/customization-settings';
 import { CustomizationSettings as CustomizationSettingsTab } from '../../tab/entities/customization-settings';
 import { CustomizationSettings as CustomizationSettingsTag } from '../../tag/entities/customization-settings';
-import { CustomizationSettings as CustomizationSettingsQuestion } from '../../question/entities/customization-settings';
-import { UpdateCustomizationSettingsUserDto } from '../../user/dto/update-customization-settings-user.dto';
-import { UpdateCustomizationSettingsTabDto } from '../../tab/dto/update-customization-settings-tab.dto';
-import { UpdateCustomizationSettingsTagDto } from '../../tag/dto/update-customization-settings-tag.dto';
-import { UpdateCustomizationSettingsQuestionDto } from '../../question/dto/update-customization-settings-question.dto';
+import { CustomizationSettings as CustomizationSettingsUser } from '../../user/entities/customization-settings';
 
 type CustomizationSettings =
-  | CustomizationSettingsUser
+  | CustomizationSettingsQuestion
   | CustomizationSettingsTab
   | CustomizationSettingsTag
-  | CustomizationSettingsQuestion;
+  | CustomizationSettingsUser;
 
 type UpdateCustomizationSettingsDto =
-  | UpdateCustomizationSettingsUserDto
+  | UpdateCustomizationSettingsQuestionDto
   | UpdateCustomizationSettingsTabDto
   | UpdateCustomizationSettingsTagDto
-  | UpdateCustomizationSettingsQuestionDto;
+  | UpdateCustomizationSettingsUserDto;
 
-const settingsMap: Record<
-  'user' | 'tab' | 'tag' | 'question',
-  new () => CustomizationSettings
-> = {
-  user: CustomizationSettingsUser,
+const settingsMap: Record<'question' | 'tab' | 'tag' | 'user', new () => CustomizationSettings> = {
+  question: CustomizationSettingsQuestion,
   tab: CustomizationSettingsTab,
   tag: CustomizationSettingsTag,
-  question: CustomizationSettingsQuestion,
+  user: CustomizationSettingsUser,
 };
 
 export const updateCustomizationSettings = (
-  type: 'user' | 'tab' | 'tag' | 'question',
+  type: 'question' | 'tab' | 'tag' | 'user',
   currentSettings: CustomizationSettings,
   updateDto: UpdateCustomizationSettingsDto,
 ): CustomizationSettings => {

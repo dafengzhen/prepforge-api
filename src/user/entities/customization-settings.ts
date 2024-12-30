@@ -1,5 +1,6 @@
-import { IBaseUpdateCustomizationSettings } from '../../interfaces/base-update-customization-settings';
 import { ApiProperty } from '@nestjs/swagger';
+
+import { IBaseUpdateCustomizationSettings } from '../../interfaces/base-update-customization-settings';
 
 /**
  * CustomizationSettings.
@@ -10,6 +11,6 @@ export class CustomizationSettings implements IBaseUpdateCustomizationSettings {
   /**
    * type.
    */
-  @ApiProperty({ type: String, default: 'user' })
+  @ApiProperty({ default: 'user', type: String })
   type = 'user' as const;
 }

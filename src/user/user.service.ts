@@ -1,15 +1,16 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
-import { AuthService } from '../auth/auth.service';
-import { EXP_DAYS } from '../constants';
-import { TokenVo } from './vo/token.vo';
-import { UpdateCustomizationSettingsUserDto } from './dto/update-customization-settings-user.dto';
-import { checkUserPermission } from '../common/tool/tool';
 import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
+import { Repository } from 'typeorm';
+
+import { AuthService } from '../auth/auth.service';
+import { checkUserPermission } from '../common/tool/tool';
+import { EXP_DAYS } from '../constants';
+import { LoginDto } from './dto/login.dto';
+import { UpdateCustomizationSettingsUserDto } from './dto/update-customization-settings-user.dto';
 import { CustomizationSettings } from './entities/customization-settings';
+import { User } from './entities/user.entity';
+import { TokenVo } from './vo/token.vo';
 
 /**
  * UserService.
@@ -23,6 +24,14 @@ export class UserService {
     private readonly userRepository: Repository<User>,
     private readonly authService: AuthService,
   ) {}
+
+  async getProfile(currentUser?: User): Promise<undefined | User> {
+    if (currentUser) {
+      return this.userRepository.findOneByOrFail({
+        id: currentUser.id,
+      });
+    }
+  }
 
   async login(loginDto: LoginDto): Promise<TokenVo> {
     const username = loginDto.username.trim();
@@ -51,19 +60,11 @@ export class UserService {
     }
 
     return new TokenVo({
-      id: _user.id,
-      username: _user.username,
-      token: await this.authService.getTokenForUser(_user),
       expDays: EXP_DAYS,
+      id: _user.id,
+      token: await this.authService.getTokenForUser(_user),
+      username: _user.username,
     });
-  }
-
-  async getProfile(currentUser?: User): Promise<User | undefined> {
-    if (currentUser) {
-      return this.userRepository.findOneByOrFail({
-        id: currentUser.id,
-      });
-    }
   }
 
   async updateCustomizationSettings(
