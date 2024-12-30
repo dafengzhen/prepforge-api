@@ -1,15 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { Repository } from 'typeorm';
 
 import { User } from '../user/entities/user.entity';
-
-/**
- * salt rounds.
- */
-const SALT_ROUNDS = 12;
 
 /**
  * AuthService.
@@ -25,11 +20,11 @@ export class AuthService {
   ) {}
 
   public static async isMatchPassword(currentPassword: string, userPassword: string) {
-    return bcrypt.compare(currentPassword, userPassword);
+    return argon2.verify(userPassword, currentPassword);
   }
 
   async encryptPassword(password: string) {
-    return bcrypt.hash(password, SALT_ROUNDS);
+    return argon2.hash(password);
   }
 
   async getTokenForUser(user: User) {
