@@ -41,19 +41,18 @@ export class QuestionService {
     ]
       .filter((item) => item.question !== '' && item.answer !== '')
       .map((item) => {
-        const q = sanitizeHtml(item.question, {
-          allowedAttributes: false,
-          nonBooleanAttributes: [],
-        });
-
         const a = sanitizeHtml(item.answer, {
           allowedAttributes: false,
+          allowedSchemesByTag: {
+            img: ['data'],
+          },
+          allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
           nonBooleanAttributes: [],
         });
 
         return {
           answer: a,
-          question: q,
+          question: item.question,
         };
       });
 
@@ -149,7 +148,14 @@ export class QuestionService {
 
     const trimmedAnswer = answer?.trim();
     if (trimmedAnswer) {
-      question.answer = trimmedAnswer;
+      question.answer = sanitizeHtml(trimmedAnswer, {
+        allowedAttributes: false,
+        allowedSchemesByTag: {
+          img: ['data'],
+        },
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
+        nonBooleanAttributes: [],
+      });
     }
 
     if (typeof sort === 'number') {
