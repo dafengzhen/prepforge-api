@@ -20,6 +20,7 @@ import {
 } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/current-user.decorator';
+import { Question } from '../question/entities/question.entity';
 import { Tag } from '../tag/entities/tag.entity';
 import { User } from '../user/entities/user.entity';
 import { CreateTabDto } from './dto/create-tab.dto';
@@ -64,6 +65,15 @@ export class TabController {
   @UseInterceptors(ClassSerializerInterceptor)
   findOne(@Param('id') id: number, @CurrentUser() user: User) {
     return this.tabService.findOne(+id, user);
+  }
+
+  @ApiForbiddenResponse()
+  @ApiOkResponse({ type: [Question] })
+  @ApiUnauthorizedResponse()
+  @Get(':id/questions')
+  @UseInterceptors(ClassSerializerInterceptor)
+  findQuestionsById(@Param('id') id: number, @CurrentUser() user: User) {
+    return this.tabService.findQuestionsById(+id, user);
   }
 
   @ApiForbiddenResponse()

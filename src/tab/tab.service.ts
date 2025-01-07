@@ -61,6 +61,18 @@ export class TabService {
     });
   }
 
+  findQuestionsById(id: number, currentUser: User) {
+    return this.tabRepository.findOneOrFail({
+      relations: ['questions'],
+      where: {
+        id,
+        user: {
+          id: currentUser.id,
+        },
+      },
+    });
+  }
+
   async findTagsById(id: number, currentUser: User) {
     return this.tabRepository.findOneOrFail({
       relations: ['tags'],
