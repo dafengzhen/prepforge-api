@@ -67,14 +67,14 @@ export class QuestionService {
       question.answer = item.answer;
       question.user = currentUser;
 
-      if (typeof tabId === 'number' && tabId !== -1) {
+      if (typeof tabId === 'number') {
         const tab = await this.tabRepository.findOne({ where: { id: tabId } });
         if (tab) {
           question.tab = tab;
         }
       }
 
-      if (typeof tagId === 'number' && tagId !== -1) {
+      if (typeof tagId === 'number') {
         const tag = await this.tagRepository.findOne({ where: { id: tagId } });
         if (tag) {
           question.tag = tag;
@@ -135,7 +135,7 @@ export class QuestionService {
       },
     });
 
-    const { answer, question: _question, sort } = updateQuestionDto;
+    const { answer, question: _question, sort, tabId, tagId } = updateQuestionDto;
 
     if (_question === question.question && answer === question.answer && sort === question.sort) {
       return;
@@ -160,6 +160,20 @@ export class QuestionService {
 
     if (typeof sort === 'number') {
       question.sort = sort;
+    }
+
+    if (typeof tabId === 'number' && tabId !== question.tab?.id) {
+      const tab = await this.tabRepository.findOne({ where: { id: tabId } });
+      if (tab) {
+        question.tab = tab;
+      }
+    }
+
+    if (typeof tagId === 'number' && tagId !== question.tag?.id) {
+      const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+      if (tag) {
+        question.tag = tag;
+      }
     }
 
     await this.questionRepository.save(question);

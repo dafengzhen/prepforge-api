@@ -30,4 +30,20 @@ export class UpdateQuestionDto {
   @IsNumber()
   @IsOptional()
   sort?: number;
+
+  /**
+   * tabId.
+   */
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  tabId?: number;
+
+  /**
+   * tagId.
+   */
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  tagId?: number;
 }
