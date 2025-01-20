@@ -41,7 +41,7 @@ export class QuestionService {
     ]
       .filter((item) => item.question !== '' && item.answer !== '')
       .map((item) => {
-        const a = sanitizeHtml(item.answer, {
+        const a = sanitizeHtml(item.answer as string, {
           allowedAttributes: false,
           allowedSchemesByTag: {
             img: ['data'],
@@ -60,10 +60,10 @@ export class QuestionService {
       throw new BadRequestException('Failed to create a question and answer');
     }
 
-    const questions = [];
+    const questions: Question[] = [];
     for (const item of allQuestions) {
       const question = new Question();
-      question.question = item.question;
+      question.question = item.question as string;
       question.answer = item.answer;
       question.user = currentUser;
 

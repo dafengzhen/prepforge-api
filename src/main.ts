@@ -31,10 +31,12 @@ async function bootstrap() {
     cors,
     rawBody: true,
   });
-  app.useGlobalInterceptors(
-    new NoEmptyInterceptor(),
-    process.env.POWERED_BY_HEADER === 'true' ? new XPoweredByInterceptor('prepforge') : null,
-  );
+
+  app.useGlobalInterceptors(new NoEmptyInterceptor());
+  if (process.env.POWERED_BY_HEADER === 'true') {
+    app.useGlobalInterceptors(new XPoweredByInterceptor('prepforge'));
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       forbidNonWhitelisted: true,
@@ -67,4 +69,4 @@ async function bootstrap() {
   await app.listen(8080);
 }
 
-bootstrap();
+void bootstrap();

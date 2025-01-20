@@ -34,7 +34,7 @@ export class TagService {
       return;
     }
 
-    const tags = [];
+    const tags: Tag[] = [];
     for (const item of allNames) {
       const tag = new Tag();
       tag.name = item;

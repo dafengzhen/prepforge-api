@@ -11,6 +11,7 @@ import { join } from 'path';
 export class Prepforge1726481659881 implements MigrationInterface {
   public async down(): Promise<void> {
     console.log('There is nothing to restore, if necessary consider deleting the database and starting over');
+    return Promise.resolve();
   }
 
   public async up(queryRunner: QueryRunner): Promise<void> {

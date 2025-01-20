@@ -4,6 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { JwtStrategy } from './jwt.strategy';
 import { IS_PUBLIC_KEY } from './public-auth.guard';
+import type { Request } from 'express';
 
 /**
  * JwtAuthGuard.
@@ -22,7 +23,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
 
-    const req = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<Request>();
     if (
       typeof JwtStrategy.extractJWT(req) === 'string' ||
       typeof JwtStrategy.extractAuthHeaderAsBearerToken(req) === 'string'

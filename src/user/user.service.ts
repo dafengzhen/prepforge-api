@@ -62,7 +62,7 @@ export class UserService {
     return new TokenVo({
       expDays: EXP_DAYS,
       id: _user.id,
-      token: await this.authService.getTokenForUser(_user),
+      token: this.authService.getTokenForUser(_user),
       username: _user.username,
     });
   }

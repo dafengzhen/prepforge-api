@@ -1,4 +1,4 @@
-import type { SelectQueryBuilder } from 'typeorm';
+import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 
 import type { PaginationQueryDto } from '../dto/pagination-query.dto';
 import type { IPagination } from '../interface/pagination';
@@ -8,7 +8,7 @@ import type { IPagination } from '../interface/pagination';
  *
  * @author dafengzhen
  */
-export async function Paginate<T>(
+export async function Paginate<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
   paginationQuery?: PaginationQueryDto,
 ): Promise<IPagination<T>> {

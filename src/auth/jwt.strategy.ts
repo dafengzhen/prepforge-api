@@ -18,8 +18,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly authService: AuthService) {
     super({
       ignoreExpiration: false,
-      jwtFromRequest: ExtractJwt.fromExtractors([JwtStrategy.extractJWT, ExtractJwt.fromAuthHeaderAsBearerToken()]),
-      secretOrKey: process.env.TOKEN_SECRET,
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Req) => JwtStrategy.extractJWT(req),
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
+      secretOrKey: process.env.TOKEN_SECRET as string,
     });
   }
 
@@ -31,14 +34,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
   }
 
-  static extractJWT(req: Req): null | string | undefined {
+  static extractJWT(req: Req): null | string {
     const key = isHttpsSite() ? SECURE_TK : TK;
     if (typeof req.cookies === 'object') {
-      const tk = req.cookies[key];
+      const tk = (req.cookies as Record<string, string>)[key];
       if (typeof tk === 'string' && tk.length > 0) {
         return tk;
       }
     }
+    return null;
   }
 
   async validate(payload: JwtPayload) {
