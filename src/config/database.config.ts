@@ -1,9 +1,9 @@
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import type { DataSourceOptions } from 'typeorm';
-import { DataSource } from 'typeorm';
 
 import { registerAs } from '@nestjs/config';
 import { config as dotenvConfig } from 'dotenv';
+import { DataSource } from 'typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 
 dotenvConfig({ path: '.env' });

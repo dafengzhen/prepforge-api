@@ -1,10 +1,11 @@
+import type { Request } from 'express';
+
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 import { JwtStrategy } from './jwt.strategy';
 import { IS_PUBLIC_KEY } from './public-auth.guard';
-import type { Request } from 'express';
 
 /**
  * JwtAuthGuard.
