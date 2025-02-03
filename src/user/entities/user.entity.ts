@@ -7,7 +7,7 @@ import { Base } from '../../common/entities/base.entity';
 import { Question } from '../../question/entities/question.entity';
 import { Tab } from '../../tab/entities/tab.entity';
 import { Tag } from '../../tag/entities/tag.entity';
-import { CustomizationSettings } from './customization-settings';
+import { CustomConfig } from './custom-config';
 
 /**
  * User.
@@ -17,11 +17,11 @@ import { CustomizationSettings } from './customization-settings';
 @Entity()
 export class User extends Base {
   /**
-   * customizationSettings.
+   * customConfig.
    */
-  @ApiProperty({ default: { type: 'user' }, type: () => CustomizationSettings })
+  @ApiProperty({ default: { type: 'user' }, type: () => CustomConfig })
   @Column({ type: 'json' })
-  customizationSettings: CustomizationSettings = new CustomizationSettings();
+  customConfig: CustomConfig = new CustomConfig();
 
   /**
    * password.

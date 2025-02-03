@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   UseInterceptors,
@@ -19,11 +20,11 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUser, TCurrentUser } from '../auth/current-user.decorator';
+import { DynamicValidationOptions } from '../common/pipes/validator-options.decorator';
 import { Question } from '../question/entities/question.entity';
-import { User } from '../user/entities/user.entity';
 import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateCustomizationSettingsTagDto } from './dto/update-customization-settings-tag.dto';
+import { UpdateCustomConfigTagDto } from './dto/update-custom-config-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { Tag } from './entities/tag.entity';
 import { TagService } from './tag.service';
@@ -44,8 +45,8 @@ export class TagController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post()
-  async create(@CurrentUser() user: User, @Body() createTagDto: CreateTagDto) {
-    return this.tagService.create(user, createTagDto);
+  async create(@Body() createTagDto: CreateTagDto, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.tagService.create(createTagDto, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -53,8 +54,8 @@ export class TagController {
   @ApiUnauthorizedResponse()
   @Get()
   @UseInterceptors(ClassSerializerInterceptor)
-  findAll(@CurrentUser() user: User) {
-    return this.tagService.findAll(user);
+  async findAll(@CurrentUser() currentUser: TCurrentUser): Promise<Tag[]> {
+    return this.tagService.findAll(currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -62,8 +63,8 @@ export class TagController {
   @ApiUnauthorizedResponse()
   @Get(':id')
   @UseInterceptors(ClassSerializerInterceptor)
-  findOne(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.tagService.findOne(+id, user);
+  async findOne(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tag> {
+    return this.tagService.findOne(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -71,8 +72,8 @@ export class TagController {
   @ApiUnauthorizedResponse()
   @Get(':id/questions')
   @UseInterceptors(ClassSerializerInterceptor)
-  findQuestionsById(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.tagService.findQuestionsById(+id, user);
+  async findQuestionsById(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tag> {
+    return this.tagService.findQuestionsById(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -80,21 +81,24 @@ export class TagController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
-  update(@Param('id') id: number, @CurrentUser() user: User, @Body() updateTagDto: UpdateTagDto) {
-    return this.tagService.update(+id, user, updateTagDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateTagDto: UpdateTagDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.tagService.update(+id, updateTagDto, currentUser);
   }
 
   @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Put(':id/customization-settings')
-  updateCustomizationSettings(
+  @Patch(':id/custom-config')
+  async updateCustomConfig(
     @Param('id') id: number,
-    @CurrentUser() user: User,
-    @Body()
-    updateCustomizationSettingsTagDto: UpdateCustomizationSettingsTagDto,
-  ) {
-    return this.tagService.updateCustomizationSettings(id, user, updateCustomizationSettingsTagDto);
+    @DynamicValidationOptions() updateCustomConfigTagDto: UpdateCustomConfigTagDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.tagService.updateCustomConfig(+id, updateCustomConfigTagDto, currentUser);
   }
 }

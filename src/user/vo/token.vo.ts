@@ -19,6 +19,12 @@ export class TokenVo {
   id: number;
 
   /**
+   * newUser.
+   */
+  @ApiProperty()
+  newUser: boolean;
+
+  /**
    * token.
    */
   @ApiProperty()

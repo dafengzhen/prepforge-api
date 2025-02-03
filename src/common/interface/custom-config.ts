@@ -1,9 +1,9 @@
 /**
- * IBaseUpdateCustomizationSettings.
+ * ICustomConfig.
  *
  * @author dafengzhen
  */
-export interface IBaseUpdateCustomizationSettings {
+export interface ICustomConfig {
   /**
    * type.
    */

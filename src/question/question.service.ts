@@ -1,20 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as sanitizeHtml from 'sanitize-html';
-import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
 import { Repository } from 'typeorm';
 
+import { TCurrentUser } from '../auth/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { IPagination } from '../common/interface/pagination';
-import { Paginate } from '../common/tool/pagination';
-import { checkUserPermission } from '../common/tool/tool';
+import { Paginate, sanitizeContent } from '../common/tool/tool';
+import { AUTHENTICATION_REQUIRED_MESSAGE } from '../constants';
 import { Tab } from '../tab/entities/tab.entity';
 import { Tag } from '../tag/entities/tag.entity';
-import { User } from '../user/entities/user.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
+import { UpdateCustomConfigQuestionDto } from './dto/update-custom-config-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
-import { CustomizationSettings } from './entities/customization-settings';
+import { CustomConfig } from './entities/custom-config';
 import { Question } from './entities/question.entity';
 
 /**
@@ -33,61 +31,69 @@ export class QuestionService {
     private readonly tagRepository: Repository<Tag>,
   ) {}
 
-  async create(currentUser: User, createQuestionDto: CreateQuestionDto) {
-    const { answer, question: _question, questions: _questions = [], tabId, tagId } = createQuestionDto;
-    const allQuestions = [
-      ..._questions,
-      ...(typeof _question === 'string' && typeof answer === 'string' ? [{ answer, question: _question }] : []),
-    ]
-      .filter((item) => item.question !== '' && item.answer !== '')
-      .map((item) => {
-        const a = sanitizeHtml(item.answer as string, {
-          allowedAttributes: false,
-          allowedSchemesByTag: {
-            img: ['data'],
-          },
-          allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
-          nonBooleanAttributes: [],
-        });
+  /**
+   * Creates new Questions based on the provided DTO and associates them with the current user, optionally linking to a Tab or Tag.
+   *
+   * Validates the input data and creates one or more Questions for the authenticated user. Optionally links each Question to specified Tab or Tag.
+   * Throws UnauthorizedException if no user is authenticated.
+   *
+   * @param createQuestionDto - Data transfer object containing information about the new Questions.
+   * @param currentUser - The currently authenticated user.
+   */
+  async create(createQuestionDto: CreateQuestionDto, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
 
-        return {
-          answer: a,
-          question: item.question,
-        };
-      });
+    const { answer, question: _question, questions: _questions = [], tabId, tagId } = createQuestionDto;
+
+    const allQuestions = [..._questions, ...(_question && answer ? [{ answer, question: _question }] : [])]
+      .map((item) => ({
+        answer: item.answer ? sanitizeContent(item.answer.trim()) : null,
+        question: item.question?.trim(),
+      }))
+      .filter((item) => item.question && item.answer);
 
     if (allQuestions.length === 0) {
-      throw new BadRequestException('Failed to create a question and answer');
+      return;
     }
 
-    const questions: Question[] = [];
-    for (const item of allQuestions) {
-      const question = new Question();
-      question.question = item.question as string;
-      question.answer = item.answer;
-      question.user = currentUser;
+    const tab = tabId ? await this.tabRepository.findOne({ where: { id: tabId, user: { id: currentUser.id } } }) : null;
+    const tag = tagId ? await this.tagRepository.findOne({ where: { id: tagId, user: { id: currentUser.id } } }) : null;
 
-      if (typeof tabId === 'number') {
-        const tab = await this.tabRepository.findOne({ where: { id: tabId } });
-        if (tab) {
-          question.tab = tab;
-        }
+    const questions = allQuestions.map(({ answer, question }) => {
+      const newQuestion = new Question();
+      newQuestion.question = question!;
+      newQuestion.answer = answer!;
+      newQuestion.user = currentUser;
+      if (tab) {
+        newQuestion.tab = tab;
       }
-
-      if (typeof tagId === 'number') {
-        const tag = await this.tagRepository.findOne({ where: { id: tagId } });
-        if (tag) {
-          question.tag = tag;
-        }
+      if (tag) {
+        newQuestion.tag = tag;
       }
-
-      questions.push(question);
-    }
+      return newQuestion;
+    });
 
     await this.questionRepository.save(questions);
   }
 
-  async findAll(currentUser: User, query?: PaginationQueryDto) {
+  /**
+   * Retrieves all Questions associated with the authenticated user, optionally paginated.
+   *
+   * Returns a list of Questions sorted by sort order and then by ID in descending order. Also includes associated Tabs and Tags.
+   * If pagination parameters are provided and valid, returns paginated results.
+   * Throws UnauthorizedException if no user is authenticated.
+   *
+   * @param dto - Pagination query data transfer object.
+   * @param currentUser - The currently authenticated user.
+   * @returns A promise resolving to an array of Questions or a paginated result set.
+   */
+  async findAll(dto: PaginationQueryDto, currentUser: TCurrentUser): Promise<IPagination<Question> | Question[]> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
     const qb = this.questionRepository
       .createQueryBuilder('question')
       .leftJoinAndSelect('question.tab', 'tab')
@@ -96,25 +102,28 @@ export class QuestionService {
       .addOrderBy('question.sort', 'DESC')
       .addOrderBy('question.id', 'DESC');
 
-    let questions: IPagination<Question> | Question[];
-
-    if (
-      !query ||
-      query.limit === undefined ||
-      query.page === undefined ||
-      query.offset === undefined ||
-      query.size === undefined
-    ) {
-      questions = await qb.getMany();
-    } else {
-      questions = await Paginate<Question>(qb, query);
+    if (Object.values(dto).every((value) => typeof value === 'number')) {
+      return Paginate<Question>(dto, qb);
     }
 
-    return questions;
+    return qb.getMany();
   }
 
-  async findOne(id: number, currentUser: User) {
-    return this.questionRepository.findOneOrFail({
+  /**
+   * Finds a specific Question by ID for the authenticated user.
+   *
+   * Throws NotFoundException if the Question does not exist or UnauthorizedException if no user is authenticated.
+   *
+   * @param id - The ID of the Question to find.
+   * @param currentUser - The currently authenticated user.
+   * @returns A promise resolving to the found Question.
+   */
+  async findOne(id: number, currentUser: TCurrentUser): Promise<Question> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    const question = await this.questionRepository.findOne({
       where: {
         id,
         user: {
@@ -122,10 +131,30 @@ export class QuestionService {
         },
       },
     });
+
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+
+    return question;
   }
 
-  async update(id: number, currentUser: User, updateQuestionDto: UpdateQuestionDto) {
-    const question = await this.questionRepository.findOneOrFail({
+  /**
+   * Updates an existing Question identified by ID with new data provided in the DTO.
+   *
+   * Throws UnauthorizedException if no user is authenticated or NotFoundException if the Question does not exist.
+   * Updates the question text, answer, sort order, and/or associated Tab/Tag based on the provided DTO.
+   *
+   * @param id - The ID of the Question to update.
+   * @param updateQuestionDto - Data transfer object containing updated information about the Question.
+   * @param currentUser - The currently authenticated user.
+   */
+  async update(id: number, updateQuestionDto: UpdateQuestionDto, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    const question = await this.questionRepository.findOne({
       relations: ['tab', 'tag'],
       where: {
         id,
@@ -135,42 +164,33 @@ export class QuestionService {
       },
     });
 
+    if (!question) {
+      throw new NotFoundException('Question not found');
+    }
+
     const { answer, question: _question, sort, tabId, tagId } = updateQuestionDto;
 
-    if (_question === question.question && answer === question.answer && sort === question.sort) {
-      return;
+    if (_question) {
+      question.question = _question.trim();
     }
 
-    const trimmedQuestion = _question?.trim();
-    if (trimmedQuestion) {
-      question.question = trimmedQuestion;
-    }
-
-    const trimmedAnswer = answer?.trim();
-    if (trimmedAnswer) {
-      question.answer = sanitizeHtml(trimmedAnswer, {
-        allowedAttributes: false,
-        allowedSchemesByTag: {
-          img: ['data'],
-        },
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img']),
-        nonBooleanAttributes: [],
-      });
+    if (answer) {
+      question.answer = sanitizeContent(answer.trim());
     }
 
     if (typeof sort === 'number') {
       question.sort = sort;
     }
 
-    if (typeof tabId === 'number' && tabId !== question.tab?.id) {
-      const tab = await this.tabRepository.findOne({ where: { id: tabId } });
+    if (typeof tabId === 'number') {
+      const tab = await this.tabRepository.findOne({ where: { id: tabId, user: { id: currentUser.id } } });
       if (tab) {
         question.tab = tab;
       }
     }
 
-    if (typeof tagId === 'number' && tagId !== question.tag?.id) {
-      const tag = await this.tagRepository.findOne({ where: { id: tagId } });
+    if (typeof tagId === 'number') {
+      const tag = await this.tagRepository.findOne({ where: { id: tagId, user: { id: currentUser.id } } });
       if (tag) {
         question.tag = tag;
       }
@@ -179,23 +199,36 @@ export class QuestionService {
     await this.questionRepository.save(question);
   }
 
-  async updateCustomizationSettings(
+  /**
+   * Updates the custom configuration of a Question identified by ID.
+   *
+   * Throws UnauthorizedException if no user is authenticated. If the Question does not exist, it simply returns without making changes.
+   * Merges the existing custom configuration with the new values provided in the DTO and updates the Question.
+   *
+   * @param id - The ID of the Question whose custom configuration needs to be updated.
+   * @param updateCustomConfigQuestionDto - Data transfer object containing updated custom configuration details.
+   * @param currentUser - The currently authenticated user.
+   */
+  async updateCustomConfig(
     id: number,
-    currentUser: User,
-    updateCustomizationSettingsQuestionDto: UpdateCustomizationSettingsQuestionDto,
-  ) {
-    checkUserPermission(id, currentUser.id);
+    updateCustomConfigQuestionDto: UpdateCustomConfigQuestionDto,
+    currentUser: TCurrentUser,
+  ): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
 
-    const question = await this.questionRepository.findOneByOrFail({
-      id,
-    });
+    const user = await this.questionRepository.findOne({ where: { id, user: { id: currentUser.id } } });
+    if (!user) {
+      return;
+    }
 
-    question.customizationSettings = updateCustomizationSettings(
-      'question',
-      question.customizationSettings,
-      updateCustomizationSettingsQuestionDto,
-    ) as CustomizationSettings;
+    const updatedCustomConfig: CustomConfig = {
+      ...user.customConfig,
+      ...updateCustomConfigQuestionDto,
+      type: 'question',
+    };
 
-    await this.questionRepository.save(question);
+    await this.questionRepository.update(id, { customConfig: updatedCustomConfig });
   }
 }

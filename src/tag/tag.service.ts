@@ -1,15 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
 import { Repository } from 'typeorm';
 
-import { checkUserPermission } from '../common/tool/tool';
+import { TCurrentUser } from '../auth/current-user.decorator';
+import { AUTHENTICATION_REQUIRED_MESSAGE } from '../constants';
 import { Tab } from '../tab/entities/tab.entity';
-import { User } from '../user/entities/user.entity';
 import { CreateTagDto } from './dto/create-tag.dto';
-import { UpdateCustomizationSettingsTagDto } from './dto/update-customization-settings-tag.dto';
+import { UpdateCustomConfigTagDto } from './dto/update-custom-config-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
-import { CustomizationSettings } from './entities/customization-settings';
+import { CustomConfig } from './entities/custom-config';
 import { Tag } from './entities/tag.entity';
 
 /**
@@ -26,34 +25,59 @@ export class TagService {
     private readonly tabRepository: Repository<Tab>,
   ) {}
 
-  async create(currentUser: User, createTagDto: CreateTagDto) {
+  /**
+   * Creates new Tags based on the provided DTO and associates them with the current user and optionally a Tab.
+   *
+   * Validates the input data and creates one or more Tags for the authenticated user. Optionally links each Tag to a specified Tab.
+   * Throws UnauthorizedException if no user is authenticated.
+   *
+   * @param createTagDto - Data transfer object containing information about the new Tags.
+   * @param currentUser - The currently authenticated user.
+   */
+  async create(createTagDto: CreateTagDto, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
     const { name, names = [], tabId } = createTagDto;
-    const allNames = [...names, ...(typeof name === 'string' ? [name] : [])].filter((item) => item !== '');
+    const allNames = (typeof name === 'string' ? [name] : [])
+      .concat(names)
+      .map((item) => item.trim())
+      .filter(Boolean);
 
     if (allNames.length === 0) {
       return;
     }
 
-    const tags: Tag[] = [];
-    for (const item of allNames) {
+    const tab = tabId ? await this.tabRepository.findOne({ where: { id: tabId, user: { id: currentUser.id } } }) : null;
+
+    const tags = allNames.map((tagName) => {
       const tag = new Tag();
-      tag.name = item;
+      tag.name = tagName;
       tag.user = currentUser;
-
-      if (typeof tabId === 'number' && tabId !== -1) {
-        const tab = await this.tabRepository.findOne({ where: { id: tabId } });
-        if (tab) {
-          tag.tab = tab;
-        }
+      if (tab) {
+        tag.tab = tab;
       }
-
-      tags.push(tag);
-    }
+      return tag;
+    });
 
     await this.tagRepository.save(tags);
   }
 
-  async findAll(currentUser: User) {
+  /**
+   * Retrieves all Tags associated with the authenticated user.
+   *
+   * Returns a list of Tags sorted by sort order and then by ID in descending order. Also includes associated Tabs.
+   * Throws UnauthorizedException if no user is authenticated.
+   *
+   * @param currentUser - The currently authenticated user.
+   * @returns A promise resolving to an array of Tags.
+   */
+  async findAll(currentUser: TCurrentUser): Promise<Tag[]> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
     return this.tagRepository
       .createQueryBuilder('tag')
       .leftJoinAndSelect('tag.tab', 'tab')
@@ -63,8 +87,21 @@ export class TagService {
       .getMany();
   }
 
-  async findOne(id: number, currentUser: User) {
-    return this.tagRepository.findOneOrFail({
+  /**
+   * Finds a specific Tag by ID for the authenticated user.
+   *
+   * Includes the associated Tab in the result. Throws NotFoundException if the Tag does not exist or UnauthorizedException if no user is authenticated.
+   *
+   * @param id - The ID of the Tag to find.
+   * @param currentUser - The currently authenticated user.
+   * @returns A promise resolving to the found Tag.
+   */
+  async findOne(id: number, currentUser: TCurrentUser): Promise<Tag> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    const tag = await this.tagRepository.findOne({
       relations: ['tab'],
       where: {
         id,
@@ -73,10 +110,29 @@ export class TagService {
         },
       },
     });
+
+    if (!tag) {
+      throw new NotFoundException('Tag not found');
+    }
+
+    return tag;
   }
 
-  async findQuestionsById(id: number, currentUser: User) {
-    return this.tagRepository.findOneOrFail({
+  /**
+   * Finds a specific Tag by ID including associated questions for the authenticated user.
+   *
+   * Includes the associated questions in the result. Throws NotFoundException if the Tag does not exist or UnauthorizedException if no user is authenticated.
+   *
+   * @param id - The ID of the Tag to find.
+   * @param currentUser - The currently authenticated user.
+   * @returns A promise resolving to the found Tag object, which includes its associated questions.
+   */
+  async findQuestionsById(id: number, currentUser: TCurrentUser): Promise<Tag> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    const tag = await this.tagRepository.findOne({
       relations: ['questions'],
       where: {
         id,
@@ -85,10 +141,30 @@ export class TagService {
         },
       },
     });
+
+    if (!tag) {
+      throw new NotFoundException('Tag not found');
+    }
+
+    return tag;
   }
 
-  async update(id: number, currentUser: User, updateTagDto: UpdateTagDto) {
-    const tag = await this.tagRepository.findOneOrFail({
+  /**
+   * Updates an existing Tag identified by ID with new data provided in the DTO.
+   *
+   * Throws UnauthorizedException if no user is authenticated or NotFoundException if the Tag does not exist.
+   * Updates the name and/or sort order of the Tag based on the provided DTO.
+   *
+   * @param id - The ID of the Tag to update.
+   * @param updateTagDto - Data transfer object containing updated information about the Tag.
+   * @param currentUser - The currently authenticated user.
+   */
+  async update(id: number, updateTagDto: UpdateTagDto, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    const tag = await this.tagRepository.findOne({
       where: {
         id,
         user: {
@@ -97,15 +173,13 @@ export class TagService {
       },
     });
 
-    const { name, sort } = updateTagDto;
-
-    if (name === tag.name && sort === tag.sort) {
-      return;
+    if (!tag) {
+      throw new NotFoundException('Tag not found');
     }
 
-    const trimmedName = name?.trim();
-    if (trimmedName) {
-      tag.name = trimmedName;
+    const { name, sort } = updateTagDto;
+    if (name) {
+      tag.name = name.trim();
     }
 
     if (typeof sort === 'number') {
@@ -115,23 +189,36 @@ export class TagService {
     await this.tagRepository.save(tag);
   }
 
-  async updateCustomizationSettings(
+  /**
+   * Updates the custom configuration of a Tag identified by ID.
+   *
+   * Throws UnauthorizedException if no user is authenticated. If the Tag does not exist, it simply returns without making changes.
+   * Merges the existing custom configuration with the new values provided in the DTO and updates the Tag.
+   *
+   * @param id - The ID of the Tag whose custom configuration needs to be updated.
+   * @param updateCustomConfigTagDto - Data transfer object containing updated custom configuration details.
+   * @param currentUser - The currently authenticated user.
+   */
+  async updateCustomConfig(
     id: number,
-    currentUser: User,
-    updateCustomizationSettingsTagDto: UpdateCustomizationSettingsTagDto,
-  ) {
-    checkUserPermission(id, currentUser.id);
+    updateCustomConfigTagDto: UpdateCustomConfigTagDto,
+    currentUser: TCurrentUser,
+  ): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
 
-    const tag = await this.tagRepository.findOneByOrFail({
-      id,
-    });
+    const user = await this.tagRepository.findOne({ where: { id, user: { id: currentUser.id } } });
+    if (!user) {
+      return;
+    }
 
-    tag.customizationSettings = updateCustomizationSettings(
-      'tag',
-      tag.customizationSettings,
-      updateCustomizationSettingsTagDto,
-    ) as CustomizationSettings;
+    const updatedCustomConfig: CustomConfig = {
+      ...user.customConfig,
+      ...updateCustomConfigTagDto,
+      type: 'tag',
+    };
 
-    await this.tagRepository.save(tag);
+    await this.tagRepository.update(id, { customConfig: updatedCustomConfig });
   }
 }

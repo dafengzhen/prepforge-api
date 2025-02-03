@@ -5,7 +5,7 @@ import { Base } from '../../common/entities/base.entity';
 import { Question } from '../../question/entities/question.entity';
 import { Tab } from '../../tab/entities/tab.entity';
 import { User } from '../../user/entities/user.entity';
-import { CustomizationSettings } from './customization-settings';
+import { CustomConfig } from './custom-config';
 
 /**
  * Tag.
@@ -15,14 +15,14 @@ import { CustomizationSettings } from './customization-settings';
 @Entity()
 export class Tag extends Base {
   /**
-   * customizationSettings.
+   * customConfig.
    */
   @ApiPropertyOptional({
     default: { type: 'tag' },
-    type: () => CustomizationSettings,
+    type: () => CustomConfig,
   })
   @Column({ type: 'json' })
-  customizationSettings: CustomizationSettings = new CustomizationSettings();
+  customConfig: CustomConfig = new CustomConfig();
 
   /**
    * name.
@@ -49,13 +49,13 @@ export class Tag extends Base {
    * tab.
    */
   @ApiPropertyOptional({ type: () => Tab })
-  @ManyToOne(() => Tab, (tab) => tab.tags, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Tab, (tab) => tab.tags, { cascade: true, onDelete: 'CASCADE' })
   tab: Tab;
 
   /**
    * user.
    */
   @ApiPropertyOptional({ type: () => User })
-  @ManyToOne(() => User, (user) => user.tags, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.tags, { cascade: true, onDelete: 'CASCADE' })
   user: User;
 }

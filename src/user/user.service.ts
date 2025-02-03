@@ -1,19 +1,21 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { updateCustomizationSettings } from 'src/common/tool/customization-settings.tool';
 import { Repository } from 'typeorm';
 
 import { AuthService } from '../auth/auth.service';
-import { checkUserPermission } from '../common/tool/tool';
-import { EXP_DAYS } from '../constants';
+import { TCurrentUser } from '../auth/current-user.decorator';
+import { AUTHENTICATION_REQUIRED_MESSAGE, EXP_DAYS } from '../constants';
 import { LoginDto } from './dto/login.dto';
-import { UpdateCustomizationSettingsUserDto } from './dto/update-customization-settings-user.dto';
-import { CustomizationSettings } from './entities/customization-settings';
+import { UpdateCustomConfigUserDto } from './dto/update-custom-config-user.dto';
+import { CustomConfig } from './entities/custom-config';
 import { User } from './entities/user.entity';
 import { TokenVo } from './vo/token.vo';
 
 /**
  * UserService.
+ *
+ * This service handles operations related to users such as login, querying user information,
+ * and updating user's custom configuration.
  *
  * @author dafengzhen
  */
@@ -25,65 +27,94 @@ export class UserService {
     private readonly authService: AuthService,
   ) {}
 
-  async getProfile(currentUser?: User): Promise<undefined | User> {
-    if (currentUser) {
-      return this.userRepository.findOneByOrFail({
-        id: currentUser.id,
-      });
-    }
-  }
-
+  /**
+   * Logs a user into the system.
+   *
+   * Validates the provided username and password. If the user does not exist, creates a new one.
+   * Returns a token containing user information and authentication details.
+   *
+   * @param loginDto - The DTO object containing login credentials (username and password).
+   * @returns A promise that resolves to a TokenVo object.
+   */
   async login(loginDto: LoginDto): Promise<TokenVo> {
     const username = loginDto.username.trim();
     const password = loginDto.password.trim();
 
-    let _user: User;
+    let user: null | User = await this.userRepository.findOne({ where: { username } });
+    let newUser: boolean = false;
 
-    if (
-      await this.userRepository.exists({
-        where: { username },
-      })
-    ) {
-      const user = await this.userRepository.findOneOrFail({
-        where: { username },
-      });
-      if (await AuthService.isMatchPassword(password, user.password)) {
-        _user = user;
-      } else {
+    if (user) {
+      if (!(await AuthService.isMatchPassword(password, user.password))) {
         throw new UnauthorizedException('Invalid username or password');
       }
     } else {
-      const user = new User();
-      user.username = username;
-      user.password = await this.authService.encryptPassword(password);
-      _user = await this.userRepository.save(user);
+      user = this.userRepository.create({
+        password: await this.authService.encryptPassword(password),
+        username,
+      });
+      user = await this.userRepository.save(user);
+      newUser = true;
     }
 
     return new TokenVo({
       expDays: EXP_DAYS,
-      id: _user.id,
-      token: this.authService.getTokenForUser(_user),
-      username: _user.username,
+      id: user.id,
+      newUser,
+      token: this.authService.sign(user),
+      username: user.username,
     });
   }
 
-  async updateCustomizationSettings(
-    id: number,
-    currentUser: User,
-    updateCustomizationSettingsUserDto: UpdateCustomizationSettingsUserDto,
+  /**
+   * Queries for a user by ID.
+   *
+   * Retrieves user information from the database using the user ID, with caching enabled for performance optimization.
+   *
+   * @param user - The current authenticated user.
+   * @returns A promise that resolves to the found user entity or null if not found.
+   */
+  async query(user: TCurrentUser): Promise<null | User> {
+    return user
+      ? this.userRepository.findOne({
+          cache: {
+            id: `users:${user.id}`,
+            milliseconds: 60000,
+          },
+          where: { id: user.id },
+        })
+      : null;
+  }
+
+  /**
+   * Updates the custom configuration for a user.
+   *
+   * Throws an error if the request is made without proper authentication.
+   * Merges existing custom configuration with the new values provided and updates the user record.
+   *
+   * @param updateCustomConfigUserDto - The DTO object containing the updated configuration data.
+   * @param currentUser - The currently authenticated user.
+   * @returns A void promise indicating the operation has completed.
+   */
+  async updateCustomConfig(
+    updateCustomConfigUserDto: UpdateCustomConfigUserDto,
+    currentUser: TCurrentUser,
   ): Promise<void> {
-    checkUserPermission(id, currentUser.id);
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
 
-    const user = await this.userRepository.findOneByOrFail({
-      id,
-    });
+    const id = currentUser.id;
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      return;
+    }
 
-    user.customizationSettings = updateCustomizationSettings(
-      'user',
-      user.customizationSettings,
-      updateCustomizationSettingsUserDto,
-    ) as CustomizationSettings;
+    const updatedCustomConfig: CustomConfig = {
+      ...user.customConfig,
+      ...updateCustomConfigUserDto,
+      type: 'user',
+    };
 
-    await this.userRepository.save(user);
+    await this.userRepository.update(id, { customConfig: updatedCustomConfig });
   }
 }

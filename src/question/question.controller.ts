@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -20,11 +21,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUser, TCurrentUser } from '../auth/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { User } from '../user/entities/user.entity';
+import { IPagination } from '../common/interface/pagination';
+import { DynamicValidationOptions } from '../common/pipes/validator-options.decorator';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateCustomizationSettingsQuestionDto } from './dto/update-customization-settings-question.dto';
+import { UpdateCustomConfigQuestionDto } from './dto/update-custom-config-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
 import { Question } from './entities/question.entity';
 import { QuestionService } from './question.service';
@@ -45,8 +47,8 @@ export class QuestionController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post()
-  async create(@CurrentUser() user: User, @Body() createQuestionDto: CreateQuestionDto) {
-    return this.questionService.create(user, createQuestionDto);
+  async create(@Body() createQuestionDto: CreateQuestionDto, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.questionService.create(createQuestionDto, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -54,8 +56,11 @@ export class QuestionController {
   @ApiUnauthorizedResponse()
   @Get()
   @UseInterceptors(ClassSerializerInterceptor)
-  findAll(@CurrentUser() user: User, @Query() query?: PaginationQueryDto) {
-    return this.questionService.findAll(user, query);
+  async findAll(
+    @Query() dto: PaginationQueryDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<IPagination<Question> | Question[]> {
+    return this.questionService.findAll(dto, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -63,8 +68,8 @@ export class QuestionController {
   @ApiUnauthorizedResponse()
   @Get(':id')
   @UseInterceptors(ClassSerializerInterceptor)
-  findOne(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.questionService.findOne(+id, user);
+  async findOne(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Question> {
+    return this.questionService.findOne(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -72,21 +77,24 @@ export class QuestionController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
-  update(@Param('id') id: number, @CurrentUser() user: User, @Body() updateQuestionDto: UpdateQuestionDto) {
-    return this.questionService.update(+id, user, updateQuestionDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.questionService.update(+id, updateQuestionDto, currentUser);
   }
 
   @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Put(':id/customization-settings')
-  updateCustomizationSettings(
+  @Patch(':id/custom-config')
+  async updateCustomConfig(
     @Param('id') id: number,
-    @CurrentUser() user: User,
-    @Body()
-    updateCustomizationSettingsQuestionDto: UpdateCustomizationSettingsQuestionDto,
-  ) {
-    return this.questionService.updateCustomizationSettings(id, user, updateCustomizationSettingsQuestionDto);
+    @DynamicValidationOptions() updateCustomConfigQuestionDto: UpdateCustomConfigQuestionDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.questionService.updateCustomConfig(+id, updateCustomConfigQuestionDto, currentUser);
   }
 }

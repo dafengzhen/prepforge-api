@@ -2,9 +2,9 @@ import { ClassSerializerInterceptor, Controller, Get, UseInterceptors } from '@n
 import { ApiBearerAuth, ApiForbiddenResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 
 import { AppService } from './app.service';
-import { CurrentUser } from './auth/current-user.decorator';
+import { CurrentUser, TCurrentUser } from './auth/current-user.decorator';
 import { Public } from './auth/public-auth.guard';
-import { User } from './user/entities/user.entity';
+import { Tab } from './tab/entities/tab.entity';
 
 /**
  * AppController.
@@ -20,15 +20,15 @@ export class AppController {
   @ApiUnauthorizedResponse()
   @Get('export')
   @UseInterceptors(ClassSerializerInterceptor)
-  export(@CurrentUser() user: User) {
-    return this.appService.export(user);
+  async export(@CurrentUser() currentUser: TCurrentUser): Promise<Tab[]> {
+    return this.appService.export(currentUser);
   }
 
   @Get('health')
   @Public()
-  health(): {
+  async health(): Promise<{
     status: 'UP';
-  } {
+  }> {
     return this.appService.health();
   }
 }

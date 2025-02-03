@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   UseInterceptors,
@@ -19,12 +20,12 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
-import { CurrentUser } from '../auth/current-user.decorator';
+import { CurrentUser, TCurrentUser } from '../auth/current-user.decorator';
+import { DynamicValidationOptions } from '../common/pipes/validator-options.decorator';
 import { Question } from '../question/entities/question.entity';
 import { Tag } from '../tag/entities/tag.entity';
-import { User } from '../user/entities/user.entity';
 import { CreateTabDto } from './dto/create-tab.dto';
-import { UpdateCustomizationSettingsTabDto } from './dto/update-customization-settings-tab.dto';
+import { UpdateCustomConfigTabDto } from './dto/update-custom-config-tab.dto';
 import { UpdateTabDto } from './dto/update-tab.dto';
 import { Tab } from './entities/tab.entity';
 import { TabService } from './tab.service';
@@ -45,8 +46,8 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post()
-  async create(@CurrentUser() user: User, @Body() createTabDto: CreateTabDto) {
-    return this.tabService.create(user, createTabDto);
+  async create(@Body() createTabDto: CreateTabDto, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.tabService.create(createTabDto, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -54,8 +55,8 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @Get()
   @UseInterceptors(ClassSerializerInterceptor)
-  findAll(@CurrentUser() user: User) {
-    return this.tabService.findAll(user);
+  async findAll(@CurrentUser() currentUser: TCurrentUser): Promise<Tab[]> {
+    return this.tabService.findAll(currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -63,8 +64,8 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @Get(':id')
   @UseInterceptors(ClassSerializerInterceptor)
-  findOne(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.tabService.findOne(+id, user);
+  async findOne(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tab> {
+    return this.tabService.findOne(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -72,8 +73,8 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @Get(':id/questions')
   @UseInterceptors(ClassSerializerInterceptor)
-  findQuestionsById(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.tabService.findQuestionsById(+id, user);
+  async findQuestionsById(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tab> {
+    return this.tabService.findQuestionsById(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -81,8 +82,8 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @Get(':id/tags')
   @UseInterceptors(ClassSerializerInterceptor)
-  findTagsById(@Param('id') id: number, @CurrentUser() user: User) {
-    return this.tabService.findTagsById(+id, user);
+  async findTagsById(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tab> {
+    return this.tabService.findTagsById(+id, currentUser);
   }
 
   @ApiForbiddenResponse()
@@ -90,21 +91,24 @@ export class TabController {
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
-  update(@Param('id') id: number, @CurrentUser() user: User, @Body() updateTabDto: UpdateTabDto) {
-    return this.tabService.update(+id, user, updateTabDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateTabDto: UpdateTabDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.tabService.update(+id, updateTabDto, currentUser);
   }
 
   @ApiForbiddenResponse()
   @ApiNoContentResponse()
   @ApiUnauthorizedResponse()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Put(':id/customization-settings')
-  updateCustomizationSettings(
+  @Patch(':id/custom-config')
+  async updateCustomConfig(
     @Param('id') id: number,
-    @CurrentUser() user: User,
-    @Body()
-    updateCustomizationSettingsTabDto: UpdateCustomizationSettingsTabDto,
-  ) {
-    return this.tabService.updateCustomizationSettings(id, user, updateCustomizationSettingsTabDto);
+    @DynamicValidationOptions() updateCustomConfigTabDto: UpdateCustomConfigTabDto,
+    @CurrentUser() currentUser: TCurrentUser,
+  ): Promise<void> {
+    return this.tabService.updateCustomConfig(+id, updateCustomConfigTabDto, currentUser);
   }
 }
