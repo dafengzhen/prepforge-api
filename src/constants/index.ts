@@ -1,6 +1,6 @@
-export const TK = '_infoharvest_tk';
+export const TK = '_prepforge_tk';
 
-export const SECURE_TK = '__Secure_infoharvest_tk';
+export const SECURE_TK = '__Secure_prepforge_tk';
 
 export const EXP_DAYS = 31;
 
