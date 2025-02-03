@@ -1,3 +1,13 @@
+create table if not exists query_result_cache
+(
+    id         int auto_increment primary key,
+    identifier varchar(255) null,
+    time       bigint       not null,
+    duration   int          not null,
+    query      text         not null,
+    result     text         not null
+);
+
 create table if not exists user
 (
     create_date   datetime(6) default CURRENT_TIMESTAMP(6) not null,
