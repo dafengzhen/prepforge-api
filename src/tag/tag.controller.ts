@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -74,6 +75,12 @@ export class TagController {
   @UseInterceptors(ClassSerializerInterceptor)
   async findQuestionsById(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Tag> {
     return this.tagService.findQuestionsById(+id, currentUser);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.tagService.remove(+id, currentUser);
   }
 
   @ApiForbiddenResponse()

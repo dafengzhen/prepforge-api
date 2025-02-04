@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { TCurrentUser } from '../auth/current-user.decorator';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
@@ -29,6 +29,7 @@ export class QuestionService {
     private readonly tabRepository: Repository<Tab>,
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
+    private readonly entityManager: EntityManager,
   ) {}
 
   /**
@@ -137,6 +138,41 @@ export class QuestionService {
     }
 
     return question;
+  }
+
+  /**
+   * Removes a question entity associated with the given ID and the current user.
+   *
+   * This function performs the following steps:
+   * 1. Checks if the current user is authenticated. If not, throws an UnauthorizedException.
+   * 2. Initiates a transaction to ensure atomicity of the operation.
+   * 3. Finds the question entity associated with the provided ID and the current user.
+   * 4. If the question exists, removes it from the database.
+   *
+   * @param id - The ID of the question to be removed.
+   * @param currentUser - The currently authenticated user.
+   * @throws {UnauthorizedException} - If the current user is not authenticated.
+   * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+   */
+  async remove(id: number, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    await this.entityManager.transaction(async (manager) => {
+      const question = await manager.findOne(Question, {
+        where: {
+          id,
+          user: {
+            id: currentUser.id,
+          },
+        },
+      });
+
+      if (question) {
+        await manager.remove(Question, question);
+      }
+    });
   }
 
   /**

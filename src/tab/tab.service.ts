@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { TCurrentUser } from '../auth/current-user.decorator';
 import { AUTHENTICATION_REQUIRED_MESSAGE } from '../constants';
@@ -23,6 +23,7 @@ export class TabService {
   constructor(
     @InjectRepository(Tab)
     private readonly tabRepository: Repository<Tab>,
+    private readonly entityManager: EntityManager,
   ) {}
 
   /**
@@ -127,6 +128,12 @@ export class TabService {
     }
 
     const tab = await this.tabRepository.findOne({
+      order: {
+        questions: {
+          id: 'DESC',
+          sort: 'DESC',
+        },
+      },
       relations: ['questions'],
       where: {
         id,
@@ -159,6 +166,12 @@ export class TabService {
     }
 
     const tab = await this.tabRepository.findOne({
+      order: {
+        tags: {
+          id: 'DESC',
+          sort: 'DESC',
+        },
+      },
       relations: ['tags'],
       where: {
         id,
@@ -173,6 +186,41 @@ export class TabService {
     }
 
     return tab;
+  }
+
+  /**
+   * Removes a tab entity associated with the given ID and the current user.
+   *
+   * This function performs the following steps:
+   * 1. Checks if the current user is authenticated. If not, throws an UnauthorizedException.
+   * 2. Initiates a transaction to ensure atomicity of the operation.
+   * 3. Finds the tab entity associated with the provided ID and the current user.
+   * 4. If the tab exists, removes it from the database.
+   *
+   * @param id - The ID of the tab to be removed.
+   * @param currentUser - The currently authenticated user.
+   * @throws {UnauthorizedException} - If the current user is not authenticated.
+   * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+   */
+  async remove(id: number, currentUser: TCurrentUser): Promise<void> {
+    if (!currentUser) {
+      throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
+    }
+
+    await this.entityManager.transaction(async (manager) => {
+      const tab = await manager.findOne(Tab, {
+        where: {
+          id,
+          user: {
+            id: currentUser.id,
+          },
+        },
+      });
+
+      if (tab) {
+        await manager.remove(Tab, tab);
+      }
+    });
   }
 
   /**

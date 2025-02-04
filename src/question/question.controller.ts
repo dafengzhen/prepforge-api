@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -70,6 +71,12 @@ export class QuestionController {
   @UseInterceptors(ClassSerializerInterceptor)
   async findOne(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<Question> {
     return this.questionService.findOne(+id, currentUser);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.questionService.remove(+id, currentUser);
   }
 
   @ApiForbiddenResponse()

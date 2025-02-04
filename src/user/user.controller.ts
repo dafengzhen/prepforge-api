@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -74,6 +75,12 @@ export class UserController {
   @UseInterceptors(ClassSerializerInterceptor)
   async query(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<null | User> {
     return this.userService.query(currentUser);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: number, @CurrentUser() currentUser: TCurrentUser): Promise<void> {
+    return this.userService.remove(currentUser);
   }
 
   @ApiBearerAuth()
