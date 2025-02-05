@@ -133,21 +133,14 @@ export class TagService {
       throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
     }
 
-    const tag = await this.tagRepository.findOne({
-      order: {
-        questions: {
-          id: 'DESC',
-          sort: 'DESC',
-        },
-      },
-      relations: ['questions'],
-      where: {
-        id,
-        user: {
-          id: currentUser.id,
-        },
-      },
-    });
+    const tag = await this.tagRepository
+      .createQueryBuilder('tag')
+      .leftJoinAndSelect('tag.questions', 'questions')
+      .where('tag.id = :id', { id })
+      .andWhere('tag.user = :userId', { userId: currentUser.id })
+      .orderBy('questions.sort', 'DESC')
+      .addOrderBy('questions.id', 'DESC')
+      .getOne();
 
     if (!tag) {
       throw new NotFoundException('Tag not found');

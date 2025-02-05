@@ -127,21 +127,14 @@ export class TabService {
       throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
     }
 
-    const tab = await this.tabRepository.findOne({
-      order: {
-        questions: {
-          id: 'DESC',
-          sort: 'DESC',
-        },
-      },
-      relations: ['questions'],
-      where: {
-        id,
-        user: {
-          id: currentUser.id,
-        },
-      },
-    });
+    const tab = await this.tabRepository
+      .createQueryBuilder('tab')
+      .leftJoinAndSelect('tab.questions', 'questions')
+      .where('tab.id = :id', { id })
+      .andWhere('tab.user = :userId', { userId: currentUser.id })
+      .orderBy('questions.sort', 'DESC')
+      .addOrderBy('questions.id', 'DESC')
+      .getOne();
 
     if (!tab) {
       throw new NotFoundException('Tab not found');
@@ -165,21 +158,14 @@ export class TabService {
       throw new UnauthorizedException(AUTHENTICATION_REQUIRED_MESSAGE);
     }
 
-    const tab = await this.tabRepository.findOne({
-      order: {
-        tags: {
-          id: 'DESC',
-          sort: 'DESC',
-        },
-      },
-      relations: ['tags'],
-      where: {
-        id,
-        user: {
-          id: currentUser.id,
-        },
-      },
-    });
+    const tab = await this.tabRepository
+      .createQueryBuilder('tab')
+      .leftJoinAndSelect('tab.tags', 'tags')
+      .where('tab.id = :id', { id })
+      .andWhere('tab.user = :userId', { userId: currentUser.id })
+      .orderBy('tags.sort', 'DESC')
+      .addOrderBy('tags.id', 'DESC')
+      .getOne();
 
     if (!tab) {
       throw new NotFoundException('Tab not found');
