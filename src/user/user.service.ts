@@ -67,20 +67,21 @@ export class UserService {
   }
 
   /**
-   * Queries for a user by ID.
+   * Fetches the profile of the currently logged-in user.
    *
-   * Retrieves user information from the database using the user ID, with caching enabled for performance optimization.
-   *
-   * @param user - The current authenticated user.
-   * @returns A promise that resolves to the found user entity or null if not found.
+   * @param {boolean} cache - Whether to enable caching for the query.
+   * @param {TCurrentUser} user - The currently authenticated user (nullable).
+   * @returns {Promise<User | null>} A promise resolving to the user profile if found, otherwise null.
    */
-  async query(user: TCurrentUser): Promise<null | User> {
+  async query(cache: boolean, user: TCurrentUser): Promise<null | User> {
     return user
       ? this.userRepository.findOne({
-          cache: {
-            id: `users:${user.id}`,
-            milliseconds: 60000,
-          },
+          cache: cache
+            ? {
+                id: `users:${user.id}`,
+                milliseconds: 60000,
+              }
+            : undefined,
           where: { id: user.id },
         })
       : null;
