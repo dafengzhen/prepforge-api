@@ -1,13 +1,13 @@
 FROM node:22-alpine AS deps
 WORKDIR /prepforge
-COPY --chown=node:node package*.json .npmrc? ./
+COPY --chown=node:node package*.json .npmrc ./
 RUN npm ci
 COPY --chown=node:node . .
 USER node
 
 FROM node:22-alpine AS builder
 WORKDIR /prepforge
-COPY --chown=node:node package*.json .npmrc? ./
+COPY --chown=node:node package*.json .npmrc ./
 COPY --chown=node:node --from=deps /prepforge/node_modules ./node_modules
 COPY --chown=node:node . .
 ENV NODE_ENV=production
