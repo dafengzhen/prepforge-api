@@ -36,21 +36,21 @@ export class User extends Base {
    * questions.
    */
   @ApiPropertyOptional({ type: () => Question })
-  @OneToMany(() => Question, (question) => question.user)
+  @OneToMany(() => Question, (question) => question.user, { cascade: true })
   questions: Question[];
 
   /**
    * tags.
    */
   @ApiPropertyOptional({ type: () => Tab })
-  @OneToMany(() => Tab, (tab) => tab.user)
+  @OneToMany(() => Tab, (tab) => tab.user, { cascade: true })
   tabs: Tab[];
 
   /**
    * tags.
    */
   @ApiPropertyOptional({ type: () => Tag })
-  @OneToMany(() => Tag, (tag) => tag.user)
+  @OneToMany(() => Tag, (tag) => tag.user, { cascade: true })
   tags: Tag[];
 
   /**

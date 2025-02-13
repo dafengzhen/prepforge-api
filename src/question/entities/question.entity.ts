@@ -51,7 +51,7 @@ export class Question extends Base {
    * tab.
    */
   @ApiPropertyOptional({ type: () => Tab })
-  @ManyToOne(() => Tab, (tab) => tab.questions, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Tab, (tab) => tab.questions, { onDelete: 'CASCADE' })
   tab: Tab;
 
   /**

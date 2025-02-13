@@ -70,6 +70,10 @@ create table if not exists question
     constraint FK_e972e175c13dd66d82c4602aa5c foreign key (tab_id) references tab (id) on delete cascade
 );
 
-create fulltext index IDX_7dd1a945ab428f2a3392c2d453 on question (question) with parser ngram;
+create fulltext index IDX_7dd1a945ab428f2a3392c2d453 on question (question)
+    with
+        parser ngram;
 
-create fulltext index IDX_dbf18774d1583f8d6eb7bd9172 on question (answer) with parser ngram;
+create fulltext index IDX_dbf18774d1583f8d6eb7bd9172 on question (answer)
+    with
+        parser ngram;

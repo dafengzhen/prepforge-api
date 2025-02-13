@@ -35,7 +35,7 @@ export class Tag extends Base {
    * questions.
    */
   @ApiPropertyOptional({ type: () => Question })
-  @OneToMany(() => Question, (question) => question.tag)
+  @OneToMany(() => Question, (question) => question.tag, { cascade: true })
   questions: Question[];
 
   /**
@@ -49,13 +49,13 @@ export class Tag extends Base {
    * tab.
    */
   @ApiPropertyOptional({ type: () => Tab })
-  @ManyToOne(() => Tab, (tab) => tab.tags, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Tab, (tab) => tab.tags, { onDelete: 'CASCADE' })
   tab: Tab;
 
   /**
    * user.
    */
   @ApiPropertyOptional({ type: () => User })
-  @ManyToOne(() => User, (user) => user.tags, { cascade: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.tags, { onDelete: 'CASCADE' })
   user: User;
 }

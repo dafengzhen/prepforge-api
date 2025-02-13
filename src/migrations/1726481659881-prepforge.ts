@@ -15,7 +15,7 @@ export class Prepforge1726481659881 implements MigrationInterface {
   }
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const query = readFileSync(join(__dirname, '../resource/ddl/v1_1__init.sql'), {
+    const query = readFileSync(join(__dirname, '../resource/ddl/v1_0__init.sql'), {
       encoding: 'utf8',
     });
 
